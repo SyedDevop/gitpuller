@@ -3,7 +3,16 @@
 <!--toc:start-->
 
 - [Reference, Idea and feature's](#reference-idea-and-features)
+- [Github Api Endpoints](#this-are-url-to-get-the-list-of-github-api)
+- [Plugin](#plugin-to-use)
 <!--toc:end-->
+
+## Plugin to use
+
+- [Bubble Tea](https://github.com/charmbracelet/bubbletea) The fun, functional
+  and stateful way to build terminal apps.
+- [Bubbles](https://github.com/charmbracelet/bubbles) Some components for
+  Bubble Tea applications
 
 ## This are url to get the list of github api
 
