@@ -1,7 +1,4 @@
-package loader
-
-// A simple program demonstrating the spinner component from the Bubbles
-// component library.
+package spinner
 
 import (
 	"fmt"
@@ -15,16 +12,16 @@ type errMsg error
 
 type model struct {
 	err      error
-	message  string
+	viewMes  string
 	spinner  spinner.Model
 	quitting bool
 }
 
-func InitialModelSpiner(loadMsg string) model {
+func InitialModelNew(viewMes string) model {
 	s := spinner.New()
-	s.Spinner = spinner.Dot
+	s.Spinner = spinner.Line
 	s.Style = lipgloss.NewStyle().Foreground(lipgloss.Color("205"))
-	return model{spinner: s, message: loadMsg}
+	return model{spinner: s, viewMes: viewMes}
 }
 
 func (m model) Init() tea.Cmd {
@@ -57,19 +54,9 @@ func (m model) View() string {
 	if m.err != nil {
 		return m.err.Error()
 	}
-	str := fmt.Sprintf("\n\n   %s %s...press q to quit\n\n", m.spinner.View(), m.message)
+	str := fmt.Sprintf("%s %s... Press 'q' to quit", m.spinner.View(), m.viewMes)
 	if m.quitting {
 		return str + "\n"
 	}
 	return str
 }
-
-//
-// func main() {
-// 	p := tea.NewProgram(initialModelSpiner("hello"))
-//
-// 	if _, err := p.Run(); err != nil {
-// 		fmt.Println(err)
-// 		os.Exit(1)
-// 	}
-// }
