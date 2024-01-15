@@ -1,13 +1,10 @@
 package cliapp
 
 import (
-	"log"
-	"os"
-
 	"github.com/urfave/cli/v2"
 )
 
-func cliApp() *cli.App {
+func CliApp() *cli.App {
 	app := &cli.App{
 		Name:    "Git Puller",
 		Version: "1.0.0",
@@ -17,17 +14,25 @@ func cliApp() *cli.App {
 				Email: "syeds.devops007@gmail.com",
 			},
 		},
-		HelpName:  "contrive",
-		Usage:     "demonstrate available API",
-		UsageText: "contrive - demonstrating the available API",
-		ArgsUsage: "[args and such]",
+		UsageText: "git-puller [global options] command [command options] [arguments...]",
+		Flags: []cli.Flag{
+			&cli.BoolFlag{
+				Name:    "branch",
+				Usage:   "Specify the branch to pull from",
+				Aliases: []string{"b"},
+			},
+		},
+		// Action: func(c *cli.Context) error {
+		// 	fmt.Println(c.Args().First())
+		// 	return nil
+		// },
 	}
 	return app
 }
 
-func CliAppInit() {
-	app := cliApp()
-	if err := app.Run(os.Args); err != nil {
-		log.Fatal(err)
-	}
-}
+// func CliAppInit() {
+// 	app := cliApp()
+// 	if err := app.Run(os.Args); err != nil {
+// 		log.Fatal(err)
+// 	}
+// }

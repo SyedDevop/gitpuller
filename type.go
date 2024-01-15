@@ -15,6 +15,11 @@ type Content struct {
 	Size        int64   `json:"size"`
 }
 
+type BadReq struct {
+	Message          string `json:"message"`
+	DocumentationUrl string `json:"documentation_url"`
+}
+
 type Links struct {
 	Self string `json:"self"`
 	Git  string `json:"git"`
