@@ -5,6 +5,8 @@ import (
 	"errors"
 	"io"
 	"net/http"
+
+	. "github.com/SyedDevop/gitpuller/mytypes"
 )
 
 type Clint struct {

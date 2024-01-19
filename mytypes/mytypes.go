@@ -1,4 +1,4 @@
-package main
+package mytypes
 
 type Content struct {
 	DownloadURL *string `json:"download_url,omitempty"`
@@ -24,4 +24,12 @@ type Links struct {
 	Self string `json:"self"`
 	Git  string `json:"git"`
 	HTML string `json:"html"`
+}
+
+type Repo struct {
+	DownloadURL *string
+	Type        string
+	Name        string
+	Path        string
+	Size        int64
 }

@@ -7,6 +7,8 @@ import (
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
+
+	. "github.com/SyedDevop/gitpuller/mytypes"
 )
 
 // Change this
@@ -20,12 +22,12 @@ var (
 
 // A Selection represents a choice made in a multiSelect step
 type Selection struct {
-	Choices map[string]bool
+	Choices []Repo
 }
 
 // Update changes the value of a Selection's Choice
-func (s *Selection) Update(optionName string, value bool) {
-	s.Choices[optionName] = value
+func (s *Selection) Update(repo Repo) {
+	s.Choices = append(s.Choices, repo) // *(s.Choices)
 }
 
 // A multiSelect.model contains the data for the multiSelect step.
@@ -36,7 +38,7 @@ type model struct {
 	choices  *Selection
 	exit     *bool
 	header   string
-	options  []string
+	options  []Repo
 	cursor   int
 }
 
@@ -46,13 +48,12 @@ func (m model) Init() tea.Cmd {
 
 // InitialModelMulti initializes a multiSelect step with
 // the given data
-func InitialModelMultiSelect(options []string, selection *Selection, header string, program *bool) model {
+func InitialModelMultiSelect(options []Repo, selection *Selection, header string) model {
 	return model{
 		options:  options,
 		selected: make(map[int]struct{}),
 		choices:  selection,
 		header:   titleStyle.Render(header),
-		exit:     program,
 	}
 }
 
@@ -82,9 +83,8 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.selected[m.cursor] = struct{}{}
 			}
 		case "y":
-			fmt.Println(m.selected)
 			for selectedKey := range m.selected {
-				m.choices.Update(m.options[selectedKey], true)
+				m.choices.Update(m.options[selectedKey])
 				m.cursor = selectedKey
 			}
 			return m, tea.Quit
@@ -98,10 +98,12 @@ func (m model) View() string {
 	s := m.header + "\n\n"
 
 	for i, option := range m.options {
+		description := fmt.Sprintf("Type: %s Size: %d", option.Type, option.Size)
 		cursor := " "
 		if m.cursor == i {
 			cursor = focusedStyle.Render(">")
-			option = selectedItemStyle.Render(option)
+			option.Name = selectedItemStyle.Render(option.Name)
+			description = selectedItemDescStyle.Render(description)
 		}
 
 		checked := " "
@@ -109,9 +111,10 @@ func (m model) View() string {
 			checked = focusedStyle.Render("*")
 		}
 
-		title := focusedStyle.Render(option)
+		title := focusedStyle.Render(option.Name)
+		des := focusedStyle.Render(description)
 
-		s += fmt.Sprintf("%s [%s] %s\n\n", cursor, checked, title)
+		s += fmt.Sprintf("%s [%s] %s\n%s\n\n", cursor, checked, title, des)
 	}
 
 	s += fmt.Sprintf("Press %s to confirm choice.\n", focusedStyle.Render("y"))
