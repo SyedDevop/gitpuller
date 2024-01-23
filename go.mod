@@ -4,7 +4,10 @@ go 1.21.5
 
 require github.com/charmbracelet/bubbletea v0.25.0
 
-require github.com/charmbracelet/lipgloss v0.9.1 // indirect
+require (
+	github.com/charmbracelet/harmonica v0.2.0 // indirect
+	github.com/charmbracelet/lipgloss v0.9.1 // indirect
+)
 
 require (
 	github.com/aymanbagabas/go-osc52/v2 v2.0.1 // indirect

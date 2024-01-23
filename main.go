@@ -10,7 +10,7 @@ import (
 	"sync"
 
 	"github.com/SyedDevop/gitpuller/cliapp"
-	"github.com/SyedDevop/gitpuller/multiSelect"
+	"github.com/SyedDevop/gitpuller/ui/multiSelect"
 	"github.com/SyedDevop/gitpuller/ui/spinner"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/urfave/cli/v2"
