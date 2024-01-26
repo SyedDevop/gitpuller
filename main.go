@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"log"
@@ -8,9 +9,11 @@ import (
 	"os"
 	"path/filepath"
 	"sync"
+	"time"
 
 	"github.com/SyedDevop/gitpuller/cliapp"
 	"github.com/SyedDevop/gitpuller/ui/multiSelect"
+	"github.com/SyedDevop/gitpuller/ui/progress"
 	"github.com/SyedDevop/gitpuller/ui/spinner"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/urfave/cli/v2"
@@ -70,15 +73,38 @@ func main() {
 			fmt.Println("\nNo option chosen 😊 Feel free to explore again!")
 		}
 
+		dt := tea.NewProgram(progress.InitialProgress(sel.Choices))
+
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			if _, err := dt.Run(); err != nil {
+				log.Fatal(err)
+			}
+		}()
+
+		dt.Send(progress.DownloadMes(""))
 		for _, choice := range sel.Choices {
 			switch choice.Type {
 			case "dir":
 				fmt.Println("Directory Currently not supported")
 			case "file":
-				downloadFile(choice, "temp")
+				if err = downloadFile(choice, "temp"); err != nil {
+					releaseErr := dt.ReleaseTerminal()
+					if releaseErr != nil {
+						log.Printf("Problem releasing terminal: %v", releaseErr)
+					}
+
+				}
+
+				dt.Send(progress.DownloadMes(choice.Name))
 			}
 		}
-
+		err = dt.ReleaseTerminal()
+		if err != nil {
+			log.Printf("Could not release terminal: %v", err)
+			return err
+		}
 		return nil
 	}
 	if err := app.Run(os.Args); err != nil {
@@ -86,19 +112,20 @@ func main() {
 	}
 }
 
-func downloadFile(content types.Repo, dest string) {
-	fmt.Println("Downloading:", content.Name)
+func downloadFile(content types.Repo, dest string) error {
+	// fmt.Println("Downloading:", content.Name)
 
 	// Get the download URL
 	downloadURL := content.DownloadURL
 	if downloadURL == nil {
-		log.Fatal("The Download URL is not available")
+		// log.Fatal("The Download URL is not available")
+		return errors.New("download URL not available")
 	}
 
 	// Get the data
 	resp, err := http.Get(*downloadURL)
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 	defer resp.Body.Close()
 
@@ -109,13 +136,18 @@ func downloadFile(content types.Repo, dest string) {
 	// Create the file
 	out, err := os.Create(filepath.Join(dest, content.Name))
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 	defer out.Close()
 
 	// Write the body to file
 	_, err = io.Copy(out, resp.Body)
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
+
+	// Add delay for testing
+	time.Sleep(1 * time.Second)
+
+	return nil
 }
