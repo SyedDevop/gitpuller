@@ -48,12 +48,13 @@ func (m model) Init() tea.Cmd {
 
 // InitialModelMulti initializes a multiSelect step with
 // the given data
-func InitialModelMultiSelect(options []Repo, selection *Selection, header string) model {
+func InitialModelMultiSelect(options []types.Repo, selection *Selection, header string, quit *bool) model {
 	return model{
 		options:  options,
 		selected: make(map[int]struct{}),
 		choices:  selection,
 		header:   titleStyle.Render(header),
+		exit:     quit,
 	}
 }
 

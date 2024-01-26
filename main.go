@@ -58,11 +58,17 @@ func main() {
 		sel := &multiSelect.Selection{
 			Choices: make([]types.Repo, 0),
 		}
+		quitSelect := false
 
-		t := tea.NewProgram(multiSelect.InitialModelMultiSelect(repos, sel, "Select"))
+		t := tea.NewProgram(multiSelect.InitialModelMultiSelect(repos, sel, "Select File/Dir to download", &quitSelect))
 		if _, err := t.Run(); err != nil {
 			log.Fatal(err)
 		}
+
+		if quitSelect {
+			fmt.Println("\nNo option chosen 😊 Feel free to explore again!")
+		}
+
 		for _, choice := range sel.Choices {
 			switch choice.Type {
 			case "dir":
