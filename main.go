@@ -82,7 +82,7 @@ func main() {
 				log.Fatal(err)
 			}
 		}()
-
+		// FIX : fix the count of download.
 		dt.Send(progress.DownloadMes(""))
 		for _, choice := range sel.Choices {
 			switch choice.Type {
