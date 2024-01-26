@@ -6,7 +6,7 @@ import (
 	"io"
 	"net/http"
 
-	. "github.com/SyedDevop/gitpuller/mytypes"
+	types "github.com/SyedDevop/gitpuller/mytypes"
 )
 
 type Clint struct {
@@ -31,7 +31,7 @@ func (c *Clint) sendRequest(req *http.Request, v interface{}) error {
 		return err
 	}
 	if res.StatusCode != http.StatusOK {
-		var badReq BadReq
+		var badReq types.BadReq
 		if err := json.Unmarshal(body, &badReq); err != nil {
 			return err
 		}
@@ -43,14 +43,14 @@ func (c *Clint) sendRequest(req *http.Request, v interface{}) error {
 	return nil
 }
 
-func (c *Clint) getCountents(url string) (*[]Content, error) {
+func (c *Clint) getCountents(url string) (*[]types.Content, error) {
 	req, err := http.NewRequest("GET", parseContentsUrl(url), nil)
 	if err != nil {
 		return nil, err
 	}
 	req.Header.Add("Accept", "application/vnd.github+json")
 
-	var contents []Content
+	var contents []types.Content
 
 	err = c.sendRequest(req, &contents)
 	if err != nil {

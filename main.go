@@ -15,7 +15,7 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/urfave/cli/v2"
 
-	. "github.com/SyedDevop/gitpuller/mytypes"
+	types "github.com/SyedDevop/gitpuller/mytypes"
 )
 
 func main() {
@@ -23,10 +23,10 @@ func main() {
 	clint := NewClint()
 	app.Action = func(c *cli.Context) error {
 		if c.NArg() <= 0 {
-			fmt.Println("Please provide repo url")
+			fmt.Println("Please provide types.Repo url")
 			return nil
 		}
-		spinner := tea.NewProgram(spinner.InitialModelNew("Fetching your repo"))
+		spinner := tea.NewProgram(spinner.InitialModelNew("Fetching your types.Repo"))
 
 		// add synchronization to wait for spinner to finish
 		wg := sync.WaitGroup{}
@@ -56,7 +56,7 @@ func main() {
 		repos := getRepoFromContent(*contents)
 
 		sel := &multiSelect.Selection{
-			Choices: make([]Repo, 0),
+			Choices: make([]types.Repo, 0),
 		}
 
 		t := tea.NewProgram(multiSelect.InitialModelMultiSelect(repos, sel, "Select"))
@@ -79,7 +79,7 @@ func main() {
 	}
 }
 
-func downloadFile(content Repo, dest string) {
+func downloadFile(content types.Repo, dest string) {
 	fmt.Println("Downloading:", content.Name)
 
 	// Get the download URL
