@@ -8,7 +8,7 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 
-	. "github.com/SyedDevop/gitpuller/mytypes"
+	types "github.com/SyedDevop/gitpuller/mytypes"
 )
 
 // Change this
@@ -18,15 +18,16 @@ var (
 	selectedItemStyle     = lipgloss.NewStyle().PaddingLeft(1).Foreground(lipgloss.Color("170")).Bold(true)
 	selectedItemDescStyle = lipgloss.NewStyle().PaddingLeft(1).Foreground(lipgloss.Color("170"))
 	descriptionStyle      = lipgloss.NewStyle().Foreground(lipgloss.Color("#40BDA3"))
+	redText               = lipgloss.NewStyle().Foreground(lipgloss.Color("196")).Bold(true)
 )
 
 // A Selection represents a choice made in a multiSelect step
 type Selection struct {
-	Choices []Repo
+	Choices []types.Repo
 }
 
 // Update changes the value of a Selection's Choice
-func (s *Selection) Update(repo Repo) {
+func (s *Selection) Update(repo types.Repo) {
 	s.Choices = append(s.Choices, repo) // *(s.Choices)
 }
 
@@ -38,7 +39,7 @@ type model struct {
 	choices  *Selection
 	exit     *bool
 	header   string
-	options  []Repo
+	options  []types.Repo
 	cursor   int
 }
 
@@ -118,6 +119,6 @@ func (m model) View() string {
 		s += fmt.Sprintf("%s [%s] %s\n%s\n\n", cursor, checked, title, des)
 	}
 
-	s += fmt.Sprintf("Press %s to confirm choice.\n", focusedStyle.Render("y"))
+	s += fmt.Sprintf("Press %s to confirm choice. (%s to quit) \n", focusedStyle.Render("y"), redText.Render("q/ctrl+c"))
 	return s
 }

@@ -26,7 +26,8 @@ func main() {
 			fmt.Println("Please provide types.Repo url")
 			return nil
 		}
-		spinner := tea.NewProgram(spinner.InitialModelNew("Fetching your types.Repo"))
+		headderMes := fmt.Sprintf("Fetching your contents Form %s Repo", c.Args().Get(0))
+		spinner := tea.NewProgram(spinner.InitialModelNew(headderMes))
 
 		// add synchronization to wait for spinner to finish
 		wg := sync.WaitGroup{}
@@ -74,7 +75,7 @@ func main() {
 			case "dir":
 				fmt.Println("Directory Currently not supported")
 			case "file":
-				downloadFile(choice, "")
+				downloadFile(choice, "temp")
 			}
 		}
 
@@ -97,20 +98,24 @@ func downloadFile(content types.Repo, dest string) {
 	// Get the data
 	resp, err := http.Get(*downloadURL)
 	if err != nil {
-		panic(err)
+		log.Fatal(err)
 	}
 	defer resp.Body.Close()
+
+	if dest != "" {
+		createDir(dest)
+	}
 
 	// Create the file
 	out, err := os.Create(filepath.Join(dest, content.Name))
 	if err != nil {
-		panic(err)
+		log.Fatal(err)
 	}
 	defer out.Close()
 
 	// Write the body to file
 	_, err = io.Copy(out, resp.Body)
 	if err != nil {
-		panic(err)
+		log.Fatal(err)
 	}
 }

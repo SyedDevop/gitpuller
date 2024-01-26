@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"os"
 
 	types "github.com/SyedDevop/gitpuller/mytypes"
 )
@@ -22,4 +23,15 @@ func getRepoFromContent(contents []types.Content) []types.Repo {
 		}
 	}
 	return newRepos
+}
+
+// Create directory if not exists.
+func createDir(name string) error {
+	if _, err := os.Stat(name); os.IsNotExist(err) {
+		err = os.Mkdir(name, os.ModePerm)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }
