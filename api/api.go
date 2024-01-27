@@ -1,4 +1,4 @@
-package main
+package api
 
 import (
 	"encoding/json"
@@ -7,6 +7,7 @@ import (
 	"net/http"
 
 	types "github.com/SyedDevop/gitpuller/mytypes"
+	"github.com/SyedDevop/gitpuller/util"
 )
 
 type Clint struct {
@@ -43,8 +44,8 @@ func (c *Clint) sendRequest(req *http.Request, v interface{}) error {
 	return nil
 }
 
-func (c *Clint) getCountents(url string) (*[]types.Content, error) {
-	req, err := http.NewRequest("GET", parseContentsUrl(url), nil)
+func (c *Clint) GetCountents(url string) (*[]types.Content, error) {
+	req, err := http.NewRequest("GET", util.ParseContentsUrl(url), nil)
 	if err != nil {
 		return nil, err
 	}

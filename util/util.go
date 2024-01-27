@@ -1,4 +1,4 @@
-package main
+package util
 
 import (
 	"fmt"
@@ -7,11 +7,11 @@ import (
 	types "github.com/SyedDevop/gitpuller/mytypes"
 )
 
-func parseContentsUrl(path string) string {
+func ParseContentsUrl(path string) string {
 	return fmt.Sprintf("https://api.github.com/repos/%s/contents", path)
 }
 
-func getRepoFromContent(contents []types.Content) []types.Repo {
+func GetRepoFromContent(contents []types.Content) []types.Repo {
 	newRepos := make([]types.Repo, len(contents))
 	for i, content := range contents {
 		newRepos[i] = types.Repo{
@@ -26,7 +26,7 @@ func getRepoFromContent(contents []types.Content) []types.Repo {
 }
 
 // Create directory if not exists.
-func createDir(name string) error {
+func CreateDir(name string) error {
 	if _, err := os.Stat(name); os.IsNotExist(err) {
 		err = os.Mkdir(name, os.ModePerm)
 		if err != nil {

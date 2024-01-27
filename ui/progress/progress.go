@@ -12,6 +12,7 @@ import (
 )
 
 type model struct {
+	err      error
 	packages []mytypes.Repo
 	spinner  spinner.Model
 	progress progress.Model
@@ -40,11 +41,12 @@ func InitialProgress(list []mytypes.Repo) model {
 		spinner:  s,
 		progress: p,
 		index:    0,
+		err:      nil,
 	}
 }
 
 func (m model) Init() tea.Cmd {
-	return m.spinner.Tick
+	return tea.Batch(DownloadFile(m.packages[m.index], "temp"), m.spinner.Tick)
 }
 
 func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
@@ -60,20 +62,24 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		if m.index >= len(m.packages)-1 {
 			// Everything's been installed. We're done!
 			m.done = true
-			return m, tea.Batch(tea.Quit,
-				tea.Printf("%s %s", checkMark, m.packages[m.index].Name),
-			)
+			return m, tea.Quit
 		}
 
 		// Update progress bar
 		progressCmd := m.progress.SetPercent(float64(m.index) / float64(len(m.packages)-1))
 
+		m.index++
 		batch := tea.Batch(
 			progressCmd,
 			tea.Printf("%s %s", checkMark, m.packages[m.index].Name), // print success message above our program
+			DownloadFile(m.packages[m.index], "temp"),
 		)
-		m.index++
 		return m, batch
+
+	case ErrMess:
+		m.err = msg
+		return m, tea.Quit
+
 	case spinner.TickMsg:
 		var cmd tea.Cmd
 		m.spinner, cmd = m.spinner.Update(msg)
@@ -111,7 +117,12 @@ func (m model) View() string {
 	return spin + info + gap + prog + pkgCount
 }
 
-type DownloadMes string
+type (
+	DownloadMes string
+	ErrMess     struct{ error }
+)
+
+func (e ErrMess) Error() string { return e.error.Error() }
 
 // func downloadAndInstall(pkg string) tea.Cmd {
 // 	// This is where you'd do i/o stuff to download and install packages. In
