@@ -68,6 +68,7 @@ func main() {
 
 		if quitSelect {
 			fmt.Println("\nNo option chosen 😊 Feel free to explore again!")
+			os.Exit(0)
 		}
 
 		dt := tea.NewProgram(progress.InitialProgress(sel.Choices))
@@ -89,7 +90,7 @@ func main() {
 				if err = progress.DownloadFile(choice, "temp"); err != nil {
 					releaseErr := dt.ReleaseTerminal()
 					if releaseErr != nil {
-						log.Printf("Problem releasing terminal: %v", releaseErr)
+						log.Fatalf("Problem releasing terminal: %v", releaseErr)
 					}
 
 				}
@@ -98,8 +99,7 @@ func main() {
 		}
 		err = dt.ReleaseTerminal()
 		if err != nil {
-			log.Printf("Could not release terminal: %v", err)
-			return err
+			log.Fatalf("Could not release terminal: %v", err)
 		}
 		return nil
 	}
