@@ -12,7 +12,7 @@ type Content struct {
 	Type        string  `json:"type"`
 	Content     string  `json:"content"`
 	Encoding    string  `json:"encoding"`
-	Size        int64   `json:"size"`
+	Size        uint64  `json:"size"`
 }
 
 type BadReq struct {
@@ -31,5 +31,5 @@ type Repo struct {
 	Type        string
 	Name        string
 	Path        string
-	Size        int64
+	Size        uint64
 }

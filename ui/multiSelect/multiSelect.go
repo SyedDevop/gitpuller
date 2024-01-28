@@ -5,10 +5,10 @@ package multiSelect
 import (
 	"fmt"
 
+	types "github.com/SyedDevop/gitpuller/mytypes"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
-
-	types "github.com/SyedDevop/gitpuller/mytypes"
+	"github.com/dustin/go-humanize"
 )
 
 // Change this
@@ -100,7 +100,7 @@ func (m model) View() string {
 	s := m.header + "\n\n"
 
 	for i, option := range m.options {
-		description := fmt.Sprintf("Type: %s Size: %d", option.Type, option.Size)
+		description := fmt.Sprintf("Type: %s Size: %s", option.Type, humanize.Bytes(option.Size))
 		cursor := " "
 		if m.cursor == i {
 			cursor = focusedStyle.Render(">")
