@@ -71,42 +71,36 @@ func main() {
 		}
 
 		dt := tea.NewProgram(progress.InitialProgress(sel.Choices))
-		if _, err := dt.Run(); err != nil {
-			log.Fatal(err)
+
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			if _, err := dt.Run(); err != nil {
+				log.Fatal(err)
+			}
+		}()
+
+		for _, choice := range sel.Choices {
+			switch choice.Type {
+			case "dir":
+				fmt.Println("Directory Currently not supported")
+			case "file":
+				// fmt.Println(choice.Name)
+				if err = progress.DownloadFile(choice, "temp"); err != nil {
+					releaseErr := dt.ReleaseTerminal()
+					if releaseErr != nil {
+						log.Printf("Problem releasing terminal: %v", releaseErr)
+					}
+
+				}
+				dt.Send(progress.DownloadMes(choice.Name))
+			}
 		}
-
-		// wg.Add(1)
-		// go func() {
-		// 	defer wg.Done()
-		// 	if _, err := dt.Run(); err != nil {
-		// 		log.Fatal(err)
-		// 	}
-		// }()
-		// FIX : fix the count of download.
-		// dt.Send(progress.DownloadMes(""))
-
-		// for _, choice := range sel.Choices {
-		// 	switch choice.Type {
-		// 	case "dir":
-		// 		fmt.Println("Directory Currently not supported")
-		// 	case "file":
-		//
-		// 		dt.Send(progress.DownloadMes(choice.Name))
-		// 		if err = downloadFile(choice, "temp"); err != nil {
-		// 			releaseErr := dt.ReleaseTerminal()
-		// 			if releaseErr != nil {
-		// 				log.Printf("Problem releasing terminal: %v", releaseErr)
-		// 			}
-		//
-		// 		}
-		//
-		// 	}
-		// }
-		// err = dt.ReleaseTerminal()
-		// if err != nil {
-		// 	log.Printf("Could not release terminal: %v", err)
-		// 	return err
-		// }
+		err = dt.ReleaseTerminal()
+		if err != nil {
+			log.Printf("Could not release terminal: %v", err)
+			return err
+		}
 		return nil
 	}
 	if err := app.Run(os.Args); err != nil {

@@ -2,7 +2,6 @@ package progress
 
 import (
 	"fmt"
-	"strings"
 
 	"github.com/SyedDevop/gitpuller/mytypes"
 	"github.com/charmbracelet/bubbles/progress"
@@ -28,6 +27,13 @@ var (
 	checkMark           = lipgloss.NewStyle().Foreground(lipgloss.Color("42")).SetString("✓")
 )
 
+type (
+	DownloadMes string
+	ErrMess     struct{ error }
+)
+
+func (e ErrMess) Error() string { return e.error.Error() }
+
 func InitialProgress(list []mytypes.Repo) model {
 	p := progress.New(
 		progress.WithDefaultGradient(),
@@ -46,7 +52,10 @@ func InitialProgress(list []mytypes.Repo) model {
 }
 
 func (m model) Init() tea.Cmd {
-	return tea.Batch(DownloadFile(m.packages[m.index], "temp"), m.spinner.Tick)
+	return tea.Batch(
+		tea.Printf("%s %s", checkMark, m.packages[m.index].Name),
+		m.spinner.Tick,
+	)
 }
 
 func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
@@ -66,13 +75,13 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 
 		// Update progress bar
-		progressCmd := m.progress.SetPercent(float64(m.index) / float64(len(m.packages)-1))
+		progressCmd := m.progress.SetPercent((float64(m.index) + 1) / float64(len(m.packages)))
 
 		m.index++
+
 		batch := tea.Batch(
 			progressCmd,
 			tea.Printf("%s %s", checkMark, m.packages[m.index].Name), // print success message above our program
-			DownloadFile(m.packages[m.index], "temp"),
 		)
 		return m, batch
 
@@ -102,36 +111,20 @@ func (m model) View() string {
 		return doneStyle.Render(fmt.Sprintf("Done! Downloading %d files/folders.\n", n))
 	}
 
-	pkgCount := fmt.Sprintf(" %*d/%*d", w, m.index, w, n-1)
+	pkgCount := fmt.Sprintf(" %*d/%*d", w, m.index+1, w, n)
 
 	spin := m.spinner.View() + " "
 	prog := m.progress.View()
 	cellsAvail := max(0, m.width-lipgloss.Width(spin+prog+pkgCount))
 
 	pkgName := currentPkgNameStyle.Render(m.packages[m.index].Name)
-	info := lipgloss.NewStyle().MaxWidth(cellsAvail).Render("Installing " + pkgName)
+	info := lipgloss.NewStyle().MaxWidth(cellsAvail).Render("Downloading " + pkgName)
 
-	cellsRemaining := max(0, m.width-lipgloss.Width(spin+info+prog+pkgCount))
-	gap := strings.Repeat(" ", cellsRemaining)
+	// cellsRemaining := max(0, m.width-lipgloss.Width(spin+info+prog+pkgCount))
+	// gap := strings.Repeat(" ", cellsRemaining)
 
-	return spin + info + gap + prog + pkgCount
+	return spin + info + " " + prog + pkgCount
 }
-
-type (
-	DownloadMes string
-	ErrMess     struct{ error }
-)
-
-func (e ErrMess) Error() string { return e.error.Error() }
-
-// func downloadAndInstall(pkg string) tea.Cmd {
-// 	// This is where you'd do i/o stuff to download and install packages. In
-// 	// our case we're just pausing for a moment to simulate the process.
-// 	d := time.Millisecond * time.Duration(rand.Intn(500)) //nolint:gosec
-// 	return tea.Tick(d, func(t time.Time) tea.Msg {
-// 		return DownloadMes(pkg)
-// 	})
-// }
 
 func max(a, b int) int {
 	if a > b {
@@ -139,10 +132,3 @@ func max(a, b int) int {
 	}
 	return b
 }
-
-// func main() {
-// 	if _, err := tea.NewProgram(newModel()).Run(); err != nil {
-// 		fmt.Println("Error running program:", err)
-// 		os.Exit(1)
-// 	}
-// }
