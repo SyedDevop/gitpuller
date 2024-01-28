@@ -97,6 +97,8 @@ func main() {
 				dt.Send(progress.DownloadMes(choice.Name))
 			}
 		}
+
+		dt.Quit()
 		err = dt.ReleaseTerminal()
 		if err != nil {
 			log.Fatalf("Could not release terminal: %v", err)
