@@ -13,12 +13,14 @@ import (
 
 // Change this
 var (
-	focusedStyle          = lipgloss.NewStyle().Foreground(lipgloss.Color("#01FAC6")).Bold(true)
-	titleStyle            = lipgloss.NewStyle().Background(lipgloss.Color("#01FAC6")).Foreground(lipgloss.Color("#030303")).Bold(true).Padding(0, 1, 0)
-	selectedItemStyle     = lipgloss.NewStyle().PaddingLeft(1).Foreground(lipgloss.Color("170")).Bold(true)
-	selectedItemDescStyle = lipgloss.NewStyle().PaddingLeft(1).Foreground(lipgloss.Color("170"))
-	descriptionStyle      = lipgloss.NewStyle().Foreground(lipgloss.Color("#40BDA3"))
-	redText               = lipgloss.NewStyle().Foreground(lipgloss.Color("196")).Bold(true)
+	titleStyle        = lipgloss.NewStyle().Background(lipgloss.Color("#01FAC6")).Foreground(lipgloss.Color("#030303")).Bold(true).Padding(0, 1, 0)
+	focusedStyle      = lipgloss.NewStyle().Foreground(lipgloss.Color("212")).Bold(true)
+	selectedItemStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("#01FAC6")).Bold(true)
+	redText           = lipgloss.NewStyle().Foreground(lipgloss.Color("196")).Bold(true)
+	fileType          = lipgloss.NewStyle().Foreground(lipgloss.Color("243"))
+	fileSize          = lipgloss.NewStyle().Foreground(lipgloss.Color("240")).Align(lipgloss.Right)
+	Directory         = lipgloss.NewStyle().Foreground(lipgloss.Color("99"))
+	File              = lipgloss.NewStyle()
 )
 
 // A Selection represents a choice made in a multiSelect step
@@ -100,25 +102,34 @@ func (m model) View() string {
 	s := m.header + "\n\n"
 
 	for i, option := range m.options {
-		description := fmt.Sprintf("Type: %s Size: %s", option.Type, humanize.Bytes(option.Size))
+		fsSize := fileSize.Render(humanize.Bytes(option.Size))
+		fsType := fileType.Render(option.Type)
+		description := fmt.Sprintf("%s %s", fsType, fsSize)
+
 		cursor := " "
 		if m.cursor == i {
 			cursor = focusedStyle.Render(">")
-			option.Name = selectedItemStyle.Render(option.Name)
-			description = selectedItemDescStyle.Render(description)
+			option.Name = focusedStyle.Render(option.Name)
+			description = focusedStyle.Render(description)
 		}
 
 		checked := " "
 		if _, ok := m.selected[i]; ok {
-			checked = focusedStyle.Render("*")
+			checked = selectedItemStyle.Render("*")
+			option.Name = selectedItemStyle.Render(option.Name)
+			description = selectedItemStyle.Render(description)
 		}
 
-		title := focusedStyle.Render(option.Name)
-		des := focusedStyle.Render(description)
+		option.Name = File.Render(option.Name)
+		if option.Type != "file" {
+			option.Name = Directory.Render(option.Name)
+		}
 
-		s += fmt.Sprintf("%s [%s] %s\n%s\n\n", cursor, checked, title, des)
+		// title := focusedStyle.Render(option.Name)
+
+		s += fmt.Sprintf("%s %s %s %s\n", cursor, checked, description, option.Name)
 	}
 
-	s += fmt.Sprintf("Press %s to confirm choice. (%s to quit) \n", focusedStyle.Render("y"), redText.Render("q/ctrl+c"))
+	s += fmt.Sprintf("\nPress %s to confirm choice. (%s to quit) \n", selectedItemStyle.Render("y"), redText.Render("q/ctrl+c"))
 	return s
 }
