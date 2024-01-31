@@ -86,6 +86,16 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			} else {
 				m.selected[m.cursor] = struct{}{}
 			}
+		case "a", "A":
+			if len(m.options) > len(m.selected) {
+				for i := 0; i < len(m.options); i++ {
+					m.selected[i] = struct{}{}
+				}
+			}
+		case "d", "D":
+			for i := 0; i < len(m.options); i++ {
+				delete(m.selected, i)
+			}
 		case "y":
 			for selectedKey := range m.selected {
 				m.choices.Update(m.options[selectedKey])
