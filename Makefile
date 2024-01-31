@@ -1,9 +1,12 @@
-@run:
-	go run . SyedDevop/linux-setup
+run:
+	@go run . SyedDevop/linux-setup
 
 
 run2:
-	go run . SyedDevop/large-file
+	@go run . SyedDevop/large-file
 
 clean:
-	rm -rf ./temp/*
+	@rm -rf ./temp/*
+
+build:
+	@go build  -o ./bin/
