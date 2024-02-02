@@ -5,13 +5,14 @@ package multiSelect
 import (
 	"fmt"
 
+	"github.com/SyedDevop/gitpuller/api"
 	types "github.com/SyedDevop/gitpuller/mytypes"
+	"github.com/charmbracelet/bubbles/spinner"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/dustin/go-humanize"
 )
 
-// Change this
 var (
 	titleStyle        = lipgloss.NewStyle().Background(lipgloss.Color("#01FAC6")).Foreground(lipgloss.Color("#030303")).Bold(true).Padding(0, 1, 0)
 	focusedStyle      = lipgloss.NewStyle().Foreground(lipgloss.Color("212")).Bold(true)
@@ -23,6 +24,13 @@ var (
 	File              = lipgloss.NewStyle()
 )
 
+type (
+	multiSelectMsg string
+	errMess        struct{ error }
+)
+
+func (e errMess) Error() string { return e.error.Error() }
+
 // A Selection represents a choice made in a multiSelect step
 type Selection struct {
 	Choices []types.Repo
@@ -33,38 +41,50 @@ func (s *Selection) Update(repo types.Repo) {
 	s.Choices = append(s.Choices, repo) // *(s.Choices)
 }
 
-// A multiSelect.model contains the data for the multiSelect step.
+type Fetch struct {
+	Err       error
+	Clint     *api.Clint
+	FetchMess string
+	Repo      []types.Repo
+	FethDone  bool
+}
+
+// A multiSelect.Model contains the data for the multiSelect step.
 //
 // It has the required methods that make it a bubbletea.Model
-type model struct {
+type Model struct {
 	selected map[int]struct{}
 	choices  *Selection
 	exit     *bool
 	header   string
+	fetch    *Fetch
 	options  []types.Repo
+	spinner  spinner.Model
 	cursor   int
-}
-
-func (m model) Init() tea.Cmd {
-	return nil
 }
 
 // InitialModelMulti initializes a multiSelect step with
 // the given data
-func InitialModelMultiSelect(options []types.Repo, selection *Selection, header string, quit *bool) model {
-	return model{
-		options:  options,
+func InitialModelMultiSelect(clintFetch *Fetch, selection *Selection, header string, quit *bool) Model {
+	s := spinner.New()
+	s.Style = lipgloss.NewStyle().Foreground(lipgloss.Color("63"))
+
+	return Model{
+		options:  make([]types.Repo, 0),
 		selected: make(map[int]struct{}),
 		choices:  selection,
 		header:   titleStyle.Render(header),
 		exit:     quit,
+		spinner:  s,
+		fetch:    clintFetch,
 	}
 }
 
-// Update is called when "things happen", it checks for
-// important keystrokes to signal when to quit, change selection,
-// and confirm the selection.
-func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (m Model) Init() tea.Cmd {
+	return tea.Batch(m.fetch.fetchContent, m.spinner.Tick)
+}
+
+func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch msg.String() {
@@ -79,12 +99,21 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			if m.cursor < len(m.options)-1 {
 				m.cursor++
 			}
-		case "enter", " ":
+		case " ":
 			_, ok := m.selected[m.cursor]
 			if ok {
 				delete(m.selected, m.cursor)
 			} else {
 				m.selected[m.cursor] = struct{}{}
+			}
+		case "enter":
+			if m.options[m.cursor].Type != "dir" {
+				_, ok := m.selected[m.cursor]
+				if ok {
+					delete(m.selected, m.cursor)
+				} else {
+					m.selected[m.cursor] = struct{}{}
+				}
 			}
 		case "a", "A":
 			if len(m.options) > len(m.selected) {
@@ -103,13 +132,29 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 			return m, tea.Quit
 		}
+
+	case spinner.TickMsg:
+		var cmd tea.Cmd
+		m.spinner, cmd = m.spinner.Update(msg)
+		return m, cmd
+	case multiSelectMsg:
+		m.fetch.FethDone = true
+		m.options = m.fetch.Repo
+		return m, nil
+	case errMess:
+		m.fetch.Err = msg
+		return m, tea.Quit
 	}
 	return m, nil
 }
 
 // View is called to draw the multiSelect step
-func (m model) View() string {
+func (m Model) View() string {
 	s := m.header + "\n\n"
+	if !m.fetch.FethDone {
+		s += fmt.Sprintf("%s %s... Press 'q' to quit", m.spinner.View(), m.fetch.FetchMess)
+		return s
+	}
 
 	for i, option := range m.options {
 		fsSize := fileSize.Render(humanize.Bytes(option.Size))

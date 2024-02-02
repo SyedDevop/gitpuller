@@ -7,16 +7,17 @@ import (
 	"net/http"
 
 	types "github.com/SyedDevop/gitpuller/mytypes"
-	"github.com/SyedDevop/gitpuller/util"
 )
 
 type Clint struct {
-	HTTPClint *http.Client
+	HTTPClint  *http.Client
+	GitRepoUrl string
 }
 
 func NewClint() *Clint {
 	return &Clint{
-		HTTPClint: &http.Client{},
+		HTTPClint:  &http.Client{},
+		GitRepoUrl: "",
 	}
 }
 
@@ -44,8 +45,11 @@ func (c *Clint) sendRequest(req *http.Request, v interface{}) error {
 	return nil
 }
 
-func (c *Clint) GetCountents(url string) (*[]types.Content, error) {
-	req, err := http.NewRequest("GET", util.ParseContentsUrl(url), nil)
+func (c *Clint) GetCountents() (*[]types.Content, error) {
+	if c.GitRepoUrl == "" {
+		return nil, errors.New("GitRepoUrl not set")
+	}
+	req, err := http.NewRequest("GET", c.GitRepoUrl, nil)
 	if err != nil {
 		return nil, err
 	}
