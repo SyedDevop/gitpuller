@@ -20,6 +20,7 @@ func GetRepoFromContent(contents []types.Content) []types.Repo {
 			Size:        content.Size,
 			DownloadURL: content.DownloadURL,
 			Type:        content.Type,
+			URL:         content.URL,
 		}
 	}
 	return newRepos

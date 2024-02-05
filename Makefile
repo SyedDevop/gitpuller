@@ -2,6 +2,9 @@ run:
 	@go run . SyedDevop/linux-setup
 
 
+run1:
+	@go run . SyedDevop/gitpuller
+
 run2:
 	@go run . SyedDevop/large-file
 

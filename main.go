@@ -37,10 +37,14 @@ func main() {
 			Clint:     clint,
 			FethDone:  false,
 			FetchMess: headderMes,
+			PathRoute: "home",
+		}
+		conTree := &multiSelect.ContentTree{
+			Tree: make(map[string]multiSelect.TreeData),
 		}
 		quitSelect := false
 
-		t := tea.NewProgram(multiSelect.InitialModelMultiSelect(fetch, sel, "Select File/Dir to download", &quitSelect))
+		t := tea.NewProgram(multiSelect.InitialModelMultiSelect(fetch, sel, conTree, "Select File/Dir to download", &quitSelect))
 		if _, err := t.Run(); err != nil {
 			log.Fatal(err)
 		}
