@@ -42,9 +42,8 @@ type TreeData struct {
 }
 
 type ContentTree struct {
-	Tree      map[string]TreeData
-	CurPath   string
-	PathRoute []string
+	Tree    map[string]TreeData
+	CurPath string
 }
 
 // Update changes the value of a Selection's Choice
@@ -122,17 +121,17 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 
 		case "backspace", "b":
-			if len(m.contentTree.PathRoute) <= 1 {
-				return m, tea.Println("Last")
-			}
-			m.contentTree.PathRoute = m.contentTree.PathRoute[:len(m.contentTree.PathRoute)-1]
-			preRepo := m.contentTree.PathRoute[len(m.contentTree.PathRoute)-1]
-			data, ok := m.contentTree.Tree[preRepo]
-			if ok {
-				m.selected = data.SelectedRepo
-				m.options = data.Repo
-			}
-			return m, tea.Batch(tea.Println(m.contentTree.PathRoute))
+			// if len(m.contentTree.PathRoute) <= 1 {
+			// 	return m, tea.Println("Last")
+			// }
+			// m.contentTree.PathRoute = m.contentTree.PathRoute[:len(m.contentTree.PathRoute)-1]
+			// preRepo := m.contentTree.PathRoute[len(m.contentTree.PathRoute)-1]
+			// data, ok := m.contentTree.Tree[preRepo]
+			// if ok {
+			// 	m.selected = data.SelectedRepo
+			// 	m.options = data.Repo
+			// }
+			return m, tea.Batch(tea.Println(m.contentTree.CurPath))
 
 		case "enter":
 			if m.options[m.cursor].Type != "dir" {
@@ -148,13 +147,13 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				if ok {
 					m.selected = data.SelectedRepo
 					m.options = data.Repo
-					return m, tea.Batch(tea.Println("Cached"), tea.Println(m.contentTree.PathRoute))
+					return m, tea.Batch(tea.Println("Cached"))
 				}
 				m.fetch.FethDone = false
 				m.fetch.Clint.GitRepoUrl = curDir.URL
 				m.fetch.PathRoute = curDir.Path
 				m.cursor = 0
-				return m, tea.Batch(m.fetch.fetchContent, tea.Println(m.contentTree.PathRoute))
+				return m, tea.Batch(m.fetch.fetchContent)
 			}
 
 		case "a", "A":
@@ -188,7 +187,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 
 		m.contentTree.CurPath = m.fetch.PathRoute
-		m.contentTree.PathRoute = append(m.contentTree.PathRoute, m.fetch.PathRoute)
+		// m.contentTree.PathRoute = append(m.contentTree.PathRoute, m.fetch.PathRoute)
 		m.contentTree.Tree[m.fetch.PathRoute] = TreeData{
 			SelectedRepo: make(map[int]struct{}),
 			Repo:         m.options,
