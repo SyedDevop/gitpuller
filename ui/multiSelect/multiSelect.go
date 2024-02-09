@@ -40,6 +40,7 @@ type Selection struct {
 	Choices []types.Repo
 }
 
+// TODO : Move (TreeData , contentTree) to separate package
 type TreeData struct {
 	SelectedRepo map[int]struct{}
 	Repo         []types.Repo
@@ -146,6 +147,7 @@ func (m Model) Init() tea.Cmd {
 	return tea.Batch(m.fetch.fetchContent, m.spinner.Tick)
 }
 
+// TODO : Check if code could be reduce.
 func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
