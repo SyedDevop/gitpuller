@@ -4,6 +4,7 @@ package multiSelect
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/SyedDevop/gitpuller/api"
 	types "github.com/SyedDevop/gitpuller/mytypes"
@@ -24,6 +25,7 @@ var (
 	fileSize          = lipgloss.NewStyle().Foreground(lipgloss.Color("240")).Width(8).Align(lipgloss.Right)
 	Directory         = lipgloss.NewStyle().Foreground(lipgloss.Color("99"))
 	File              = lipgloss.NewStyle()
+	pathStyle         = lipgloss.NewStyle().Foreground(lipgloss.Color("#01FAC6")).Bold(true).Padding(0, 1, 0)
 )
 
 type (
@@ -236,10 +238,12 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 // View is called to draw the multiSelect step
 func (m Model) View() string {
-	s := m.header + "\n\n"
+	var s strings.Builder
+	currebtPath := pathStyle.Render("Current Path: (" + m.contentTree.CurPath + ")")
+	s.WriteString(m.header + "\n" + currebtPath + "\n\n")
 	if !m.fetch.FethDone {
-		s += fmt.Sprintf("%s %s... Press 'q' to quit", m.spinner.View(), m.fetch.FetchMess)
-		return s
+		s.WriteString(fmt.Sprintf("%s %s... Press 'q' to quit", m.spinner.View(), m.fetch.FetchMess))
+		return s.String()
 	}
 
 	for i, option := range m.options {
@@ -268,9 +272,9 @@ func (m Model) View() string {
 
 		// title := focusedStyle.Render(option.Name)
 
-		s += fmt.Sprintf("%s %s %s %s\n", cursor, checked, description, option.Name)
+		s.WriteString(fmt.Sprintf("%s %s %s %s\n", cursor, checked, description, option.Name))
 	}
 
-	s += fmt.Sprintf("\nPress %s to confirm choice. (%s to quit) \n", selectedItemStyle.Render("y"), redText.Render("q/ctrl+c"))
-	return s
+	s.WriteString(fmt.Sprintf("\nPress %s to confirm choice. (%s to quit) \n", selectedItemStyle.Render("y"), redText.Render("q/ctrl+c")))
+	return s.String()
 }
