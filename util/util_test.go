@@ -60,4 +60,8 @@ func TestGetParentPath(t *testing.T) {
 	isParent1, parentPath1 := GetParentPath(pathsList[3])
 	assert.Equal(t, parentPath1, "Home", "The path should be a parent")
 	assert.Equal(t, isParent1, true, "Is parent should be False")
+
+	isRoot, parentPath2 := GetParentPath("/")
+	assert.Equal(t, parentPath2, "/", "Passed '/' and should get '/'")
+	assert.Equal(t, isRoot, true, "This should be true")
 }
