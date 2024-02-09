@@ -1,7 +1,6 @@
 package util
 
 import (
-	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -22,35 +21,37 @@ func TestGetParentPath(t *testing.T) {
 		"/Home",
 	}
 
-	// pathSteps2 := []string{
-	// 	"/Home/username/projects",
-	// 	"/Home/username",
-	// 	"Home",
-	// }
+	pathSteps2 := []string{
+		"Home/username/projects",
+		"Home/username",
+		"Home",
+	}
 
 	workingPath := pathsList[0]
-	for i := 1; i <= 3; i++ {
-		fmt.Println(i)
+	for i := 1; i <= 10; i++ {
 		isParent, parentPath := GetParentPath(workingPath)
-		if i == 3 {
+		workingPath = parentPath
+		if i >= 4 {
 			assert.Equal(t, parentPath, pathSteps1[2], "The path should be a parent from :last")
 			assert.Equal(t, isParent, true, "Is parent should be true from :last")
+			continue
 		}
 		assert.Equal(t, parentPath, pathSteps1[i-1], "The path should be a parent :else")
 		assert.Equal(t, isParent, false, "Is parent should be False :else")
-		workingPath = parentPath
 	}
 
-	// workingPath2 := pathsList[1]
-	// for i := 1; i <= 3; i++ {
-	// 	isParent, parentPath := GetParentPath(workingPath2)
-	// 	if i == 3 {
-	// 		assert.Equal(t, parentPath, pathSteps2[2], "The path should be a parent")
-	// 		assert.Equal(t, isParent, true, "Is parent should be true")
-	// 	}
-	// 	assert.Equal(t, parentPath, pathSteps2[i-1], "The path should be a parent")
-	// 	assert.Equal(t, isParent, false, "Is parent should be False")
-	// }
+	workingPath2 := pathsList[1]
+	for i := 1; i <= 10; i++ {
+		isParent, parentPath := GetParentPath(workingPath2)
+		workingPath2 = parentPath
+		if i >= 4 {
+			assert.Equal(t, parentPath, pathSteps2[2], "The path should be a parent")
+			assert.Equal(t, isParent, true, "Is parent should be true")
+			continue
+		}
+		assert.Equal(t, parentPath, pathSteps2[i-1], "The path should be a parent")
+		assert.Equal(t, isParent, false, "Is parent should be False")
+	}
 
 	isParent, parentPath := GetParentPath(pathsList[2])
 	assert.Equal(t, parentPath, "/home", "The parent should be /home")

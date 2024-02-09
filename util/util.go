@@ -53,11 +53,10 @@ func CreateDir(name string) error {
 // handle Windows paths that use "\" as a directory separator.
 func GetParentPath(path string) (bool, string) {
 	index := strings.LastIndex(path, "/")
-
 	if index == 0 || index == -1 {
 		return true, path
 	} else if index == len(path)-1 {
-		return true, path[:index]
+		return GetParentPath(path[:index])
 	}
 	return false, path[:index]
 }
