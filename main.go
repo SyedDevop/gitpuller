@@ -37,10 +37,11 @@ func main() {
 			Clint:     clint,
 			FethDone:  false,
 			FetchMess: headderMes,
-			PathRoute: "home",
 		}
 		conTree := &multiSelect.ContentTree{
-			Tree: make(map[string]multiSelect.TreeData),
+			Tree:     make(map[string]*multiSelect.TreeData),
+			RootPath: "home",
+			CurPath:  "home",
 		}
 		quitSelect := false
 
@@ -57,6 +58,7 @@ func main() {
 			os.Exit(0)
 		}
 
+		fmt.Println(conTree.Tree)
 		dt := tea.NewProgram(progress.InitialProgress(sel.Choices))
 
 		wg := sync.WaitGroup{}

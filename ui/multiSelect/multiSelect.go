@@ -7,6 +7,8 @@ import (
 
 	"github.com/SyedDevop/gitpuller/api"
 	types "github.com/SyedDevop/gitpuller/mytypes"
+	"github.com/SyedDevop/gitpuller/util"
+
 	"github.com/charmbracelet/bubbles/spinner"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
@@ -42,8 +44,54 @@ type TreeData struct {
 }
 
 type ContentTree struct {
-	Tree    map[string]TreeData
-	CurPath string
+	Tree     map[string]*TreeData
+	CurPath  string
+	RootPath string
+}
+
+func (t *TreeData) updateSelectedRepo(key int) {
+	if _, ok := t.SelectedRepo[key]; ok {
+		delete(t.SelectedRepo, key)
+	} else {
+		t.SelectedRepo[key] = struct{}{}
+	}
+}
+
+func (t *TreeData) SelecteAllRepo() {
+	if len(t.Repo) > len(t.SelectedRepo) {
+		for i := 0; i < len(t.Repo); i++ {
+			t.SelectedRepo[i] = struct{}{}
+		}
+	}
+}
+
+func (t *TreeData) RemoveAllRepo() {
+	if len(t.SelectedRepo) > 0 {
+		for i := 0; i <= len(t.Repo); i++ {
+			delete(t.SelectedRepo, i)
+		}
+	}
+}
+
+func (c *ContentTree) updateTreesSelected(index int) {
+	path := c.CurPath
+	if treeData, ok := c.Tree[path]; ok {
+		treeData.updateSelectedRepo(index)
+	}
+}
+
+func (c *ContentTree) selectAllCurTreeRepo() {
+	path := c.CurPath
+	if treeData, ok := c.Tree[path]; ok {
+		treeData.SelecteAllRepo()
+	}
+}
+
+func (c *ContentTree) RemoveAllCurTreeRepo() {
+	path := c.CurPath
+	if treeData, ok := c.Tree[path]; ok {
+		treeData.RemoveAllRepo()
+	}
 }
 
 // Update changes the value of a Selection's Choice
@@ -55,7 +103,6 @@ type Fetch struct {
 	Err       error
 	Clint     *api.Clint
 	FetchMess string
-	PathRoute string
 	Repo      []types.Repo
 	FethDone  bool
 }
@@ -64,7 +111,7 @@ type Fetch struct {
 //
 // It has the required methods that make it a bubbletea.Model
 type Model struct {
-	selected    map[int]struct{}
+	// selected    map[int]struct{}
 	choices     *Selection
 	exit        *bool
 	fetch       *Fetch
@@ -82,8 +129,8 @@ func InitialModelMultiSelect(clintFetch *Fetch, selection *Selection, conTree *C
 	s.Style = lipgloss.NewStyle().Foreground(lipgloss.Color("63"))
 
 	return Model{
-		options:     make([]types.Repo, 0),
-		selected:    make(map[int]struct{}),
+		options: make([]types.Repo, 0),
+		// selected:    make(map[int]struct{}),
 		choices:     selection,
 		header:      titleStyle.Render(header),
 		exit:        quit,
@@ -113,64 +160,57 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.cursor++
 			}
 		case " ":
-			_, ok := m.selected[m.cursor]
-			if ok {
-				delete(m.selected, m.cursor)
-			} else {
-				m.selected[m.cursor] = struct{}{}
-			}
+			m.contentTree.updateTreesSelected(m.cursor)
 
 		case "backspace", "b":
-			// if len(m.contentTree.PathRoute) <= 1 {
-			// 	return m, tea.Println("Last")
-			// }
-			// m.contentTree.PathRoute = m.contentTree.PathRoute[:len(m.contentTree.PathRoute)-1]
-			// preRepo := m.contentTree.PathRoute[len(m.contentTree.PathRoute)-1]
-			// data, ok := m.contentTree.Tree[preRepo]
-			// if ok {
-			// 	m.selected = data.SelectedRepo
-			// 	m.options = data.Repo
-			// }
-			return m, tea.Batch(tea.Println(m.contentTree.CurPath))
+			// This is sub folder root and Path.
+			IsRoot, path := util.GetParentPath(m.contentTree.CurPath)
+			// base file path of the hole repo
+			isBasePath := m.contentTree.RootPath == m.contentTree.CurPath
+			if IsRoot {
+				if isBasePath {
+					return m, nil
+				}
+				path = m.contentTree.RootPath
+			}
+			data, ok := m.contentTree.Tree[path]
+			if ok {
+				// m.selected = data.SelectedRepo
+				m.options = data.Repo
+				m.contentTree.CurPath = path
+			}
+			return m, nil
 
 		case "enter":
 			if m.options[m.cursor].Type != "dir" {
-				_, ok := m.selected[m.cursor]
-				if ok {
-					delete(m.selected, m.cursor)
-				} else {
-					m.selected[m.cursor] = struct{}{}
-				}
+				m.contentTree.updateTreesSelected(m.cursor)
 			} else {
 				curDir := m.options[m.cursor]
 				data, ok := m.contentTree.Tree[curDir.Path]
+				m.cursor = 0
+				m.contentTree.CurPath = curDir.Path
+
 				if ok {
-					m.selected = data.SelectedRepo
 					m.options = data.Repo
-					return m, tea.Batch(tea.Println("Cached"))
+					return m, nil
 				}
 				m.fetch.FethDone = false
 				m.fetch.Clint.GitRepoUrl = curDir.URL
-				m.fetch.PathRoute = curDir.Path
-				m.cursor = 0
 				return m, tea.Batch(m.fetch.fetchContent)
 			}
 
 		case "a", "A":
-			if len(m.options) > len(m.selected) {
-				for i := 0; i < len(m.options); i++ {
-					m.selected[i] = struct{}{}
+			m.contentTree.selectAllCurTreeRepo()
+		case "d", "D":
+			m.contentTree.RemoveAllCurTreeRepo()
+		case "y":
+			for _, repos := range m.contentTree.Tree {
+				for selectedKey := range repos.SelectedRepo {
+					m.choices.Update(repos.Repo[selectedKey])
+					m.cursor = selectedKey
 				}
 			}
-		case "d", "D":
-			for i := 0; i < len(m.options); i++ {
-				delete(m.selected, i)
-			}
-		case "y":
-			for selectedKey := range m.selected {
-				m.choices.Update(m.options[selectedKey])
-				m.cursor = selectedKey
-			}
+
 			return m, tea.Quit
 		}
 
@@ -182,13 +222,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.fetch.FethDone = true
 		m.options = m.fetch.Repo
 
-		for k := range m.selected {
-			delete(m.selected, k)
-		}
-
-		m.contentTree.CurPath = m.fetch.PathRoute
-		// m.contentTree.PathRoute = append(m.contentTree.PathRoute, m.fetch.PathRoute)
-		m.contentTree.Tree[m.fetch.PathRoute] = TreeData{
+		m.contentTree.Tree[m.contentTree.CurPath] = &TreeData{
 			SelectedRepo: make(map[int]struct{}),
 			Repo:         m.options,
 		}
@@ -221,7 +255,7 @@ func (m Model) View() string {
 		}
 
 		checked := " "
-		if _, ok := m.selected[i]; ok {
+		if _, ok := m.contentTree.Tree[m.contentTree.CurPath].SelectedRepo[i]; ok {
 			checked = selectedItemStyle.Render("*")
 			option.Name = selectedItemStyle.Render(option.Name)
 			description = selectedItemStyle.Render(description)
