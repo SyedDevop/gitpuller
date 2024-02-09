@@ -44,8 +44,7 @@ func CreateDir(name string) error {
 // - path: A string representing the file or directory path from which the parent path is to be extracted.
 //
 // Returns:
-//  1. A boolean value indicating the success or failure of finding a parent path. It returns false if a parent path is found,
-//     and true if the path does not contain a "/", suggesting it might be a root directory or a plain file/directory name without any parent directories.
+//  1. A boolean value indicating if it is a root path. True if the path is a root path, false otherwise.
 //  2. A string containing the parent path if found. If a "/" is present, this will be the path up to the last "/", excluding the "/"
 //     itself. If no "/" is found, indicating no parent path can be extracted, the function returns the original path.
 //
