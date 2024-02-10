@@ -91,14 +91,16 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.contentTree.UpdateTreesSelected(m.cursor)
 
 		case "backspace", "b":
-			// This is sub folder root and Path.
-			IsRoot, path := util.GetParentPath(m.contentTree.CurPath)
-			// base file path of the hole repo
+
+			// base file path of the whole repo
 			isBasePath := m.contentTree.RootPath == m.contentTree.CurPath
+			if isBasePath {
+				return m, nil
+			}
+
+			// This is sub folder of root and Path.
+			IsRoot, path := util.GetParentPath(m.contentTree.CurPath)
 			if IsRoot {
-				if isBasePath {
-					return m, nil
-				}
 				path = m.contentTree.RootPath
 			}
 			chachedNode, ok := m.contentTree.Tree[path]
