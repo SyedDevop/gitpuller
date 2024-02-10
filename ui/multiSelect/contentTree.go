@@ -57,8 +57,9 @@ func (c *ContentTree) AppendSelected() []types.Repo {
 		for selectRepo := range repos.SelectedRepo {
 			if repos.Repo[selectRepo].Type == "dir" {
 				dirRepo = append(dirRepo, repos.Repo[selectRepo])
+			} else {
+				c.SelectedRepo = append(c.SelectedRepo, repos.Repo[selectRepo])
 			}
-			c.SelectedRepo = append(c.SelectedRepo, repos.Repo[selectRepo])
 		}
 	}
 	return dirRepo

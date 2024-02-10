@@ -4,7 +4,6 @@ package multiSelect
 
 import (
 	"fmt"
-	"os"
 	"strings"
 
 	types "github.com/SyedDevop/gitpuller/mytypes"
@@ -30,7 +29,6 @@ var (
 
 type (
 	multiSelectMsg string
-	fetchMsg       string
 	errMess        struct{ error }
 )
 
@@ -127,13 +125,11 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.contentTree.RemoveAllCurTreeRepo()
 		case "y":
 			dirRepos := m.contentTree.AppendSelected()
-			fmt.Fprint(os.Stdout, []any{"Val %v", dirRepos}...)
 			if len(dirRepos) == 0 {
 				return m, tea.Quit
 			}
 			m.fetch.FethDone = false
 			m.fetch.FetchMess = "Processing... File to be downloaded"
-			// BUG : Folder are all so getting added to SelectedRepo.
 			return m, tea.Batch(FetchAllFolders(&m, dirRepos), m.spinner.Tick)
 		}
 
@@ -150,12 +146,11 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			Repo:         m.options,
 		}
 		return m, nil
-	case fetchMsg:
-		return m, tea.Batch(tea.Println("GOte"))
 	case errMess:
 		m.fetch.Err = msg
 		return m, tea.Quit
 	}
+
 	return m, nil
 }
 
@@ -168,7 +163,7 @@ func FetchAllFolders(model *Model, list []types.Repo) tea.Cmd {
 			}
 			model.contentTree.SelectedRepo = append(model.contentTree.SelectedRepo, allRepos...)
 		}
-		return fetchMsg("Done")
+		return tea.QuitMsg{}
 	}
 }
 
