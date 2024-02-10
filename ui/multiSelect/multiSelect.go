@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/SyedDevop/gitpuller/api"
 	types "github.com/SyedDevop/gitpuller/mytypes"
 	"github.com/SyedDevop/gitpuller/util"
 
@@ -36,86 +35,15 @@ type (
 func (e errMess) Error() string { return e.error.Error() }
 
 // A Selection represents a choice made in a multiSelect step
-type Selection struct {
-	Choices []types.Repo
-}
-
-// TODO : Move (TreeData , contentTree) to separate package
-type TreeData struct {
-	SelectedRepo map[int]struct{}
-	Repo         []types.Repo
-}
-
-type ContentTree struct {
-	Tree     map[string]*TreeData
-	CurPath  string
-	RootPath string
-}
-
-func (t *TreeData) updateSelectedRepo(key int) {
-	if _, ok := t.SelectedRepo[key]; ok {
-		delete(t.SelectedRepo, key)
-	} else {
-		t.SelectedRepo[key] = struct{}{}
-	}
-}
-
-func (t *TreeData) SelecteAllRepo() {
-	if len(t.Repo) > len(t.SelectedRepo) {
-		for i := 0; i < len(t.Repo); i++ {
-			t.SelectedRepo[i] = struct{}{}
-		}
-	}
-}
-
-func (t *TreeData) RemoveAllRepo() {
-	if len(t.SelectedRepo) > 0 {
-		for i := 0; i <= len(t.Repo); i++ {
-			delete(t.SelectedRepo, i)
-		}
-	}
-}
-
-func (c *ContentTree) updateTreesSelected(index int) {
-	path := c.CurPath
-	if treeData, ok := c.Tree[path]; ok {
-		treeData.updateSelectedRepo(index)
-	}
-}
-
-func (c *ContentTree) selectAllCurTreeRepo() {
-	path := c.CurPath
-	if treeData, ok := c.Tree[path]; ok {
-		treeData.SelecteAllRepo()
-	}
-}
-
-func (c *ContentTree) RemoveAllCurTreeRepo() {
-	path := c.CurPath
-	if treeData, ok := c.Tree[path]; ok {
-		treeData.RemoveAllRepo()
-	}
-}
-
-// Update changes the value of a Selection's Choice
-func (s *Selection) Update(repo types.Repo) {
-	s.Choices = append(s.Choices, repo) // *(s.Choices)
-}
-
-type Fetch struct {
-	Err       error
-	Clint     *api.Clint
-	FetchMess string
-	Repo      []types.Repo
-	FethDone  bool
-}
-
-// A multiSelect.Model contains the data for the multiSelect step.
 //
-// It has the required methods that make it a bubbletea.Model
+//	type Selection struct {
+//		Choices []types.Repo
+//	}
+//
+//	func (s *Selection) Update(repo types.Repo) {
+//		s.Choices = append(s.Choices, repo) // *(s.Choices)
+//	}
 type Model struct {
-	// selected    map[int]struct{}
-	choices     *Selection
 	exit        *bool
 	fetch       *Fetch
 	contentTree *ContentTree
@@ -125,16 +53,12 @@ type Model struct {
 	cursor      int
 }
 
-// InitialModelMulti initializes a multiSelect step with
-// the given data
-func InitialModelMultiSelect(clintFetch *Fetch, selection *Selection, conTree *ContentTree, header string, quit *bool) Model {
+func InitialModelMultiSelect(clintFetch *Fetch, conTree *ContentTree, header string, quit *bool) Model {
 	s := spinner.New()
 	s.Style = lipgloss.NewStyle().Foreground(lipgloss.Color("63"))
 
 	return Model{
-		options: make([]types.Repo, 0),
-		// selected:    make(map[int]struct{}),
-		choices:     selection,
+		options:     make([]types.Repo, 0),
 		header:      titleStyle.Render(header),
 		exit:        quit,
 		spinner:     s,
@@ -164,7 +88,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.cursor++
 			}
 		case " ":
-			m.contentTree.updateTreesSelected(m.cursor)
+			m.contentTree.UpdateTreesSelected(m.cursor)
 
 		case "backspace", "b":
 			// This is sub folder root and Path.
@@ -177,44 +101,37 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				}
 				path = m.contentTree.RootPath
 			}
-			data, ok := m.contentTree.Tree[path]
+			chachedNode, ok := m.contentTree.Tree[path]
 			if ok {
-				// m.selected = data.SelectedRepo
-				m.options = data.Repo
+				m.options = chachedNode.Repo
 				m.contentTree.CurPath = path
 			}
 			return m, nil
 
 		case "enter":
 			if m.options[m.cursor].Type != "dir" {
-				m.contentTree.updateTreesSelected(m.cursor)
+				m.contentTree.UpdateTreesSelected(m.cursor)
 			} else {
 				curDir := m.options[m.cursor]
-				data, ok := m.contentTree.Tree[curDir.Path]
+				chachedNode, ok := m.contentTree.Tree[curDir.Path]
 				m.cursor = 0
 				m.contentTree.CurPath = curDir.Path
 
 				if ok {
-					m.options = data.Repo
+					m.options = chachedNode.Repo
 					return m, nil
 				}
 				m.fetch.FethDone = false
 				m.fetch.Clint.GitRepoUrl = curDir.URL
-				return m, tea.Batch(m.fetch.fetchContent)
+				return m, m.fetch.fetchContent
 			}
 
 		case "a", "A":
-			m.contentTree.selectAllCurTreeRepo()
+			m.contentTree.SelectAllCurTreeRepo()
 		case "d", "D":
 			m.contentTree.RemoveAllCurTreeRepo()
 		case "y":
-			for _, repos := range m.contentTree.Tree {
-				for selectedKey := range repos.SelectedRepo {
-					m.choices.Update(repos.Repo[selectedKey])
-					m.cursor = selectedKey
-				}
-			}
-
+			m.contentTree.AppendSelected()
 			return m, tea.Quit
 		}
 
@@ -226,7 +143,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.fetch.FethDone = true
 		m.options = m.fetch.Repo
 
-		m.contentTree.Tree[m.contentTree.CurPath] = &TreeData{
+		m.contentTree.Tree[m.contentTree.CurPath] = &Node{
 			SelectedRepo: make(map[int]struct{}),
 			Repo:         m.options,
 		}

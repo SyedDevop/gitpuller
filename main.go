@@ -28,10 +28,6 @@ func main() {
 		headderMes := fmt.Sprintf("Fetching your contents Form %s Repo", c.Args().Get(0))
 		clint.GitRepoUrl = util.ParseContentsUrl(c.Args().Get(0))
 
-		// List of all the files in repo to download.
-		sel := &multiSelect.Selection{
-			Choices: make([]types.Repo, 0),
-		}
 		// Manager for Fetching State of git repo contents.
 		fetch := &multiSelect.Fetch{
 			Clint:     clint,
@@ -39,13 +35,14 @@ func main() {
 			FetchMess: headderMes,
 		}
 		conTree := &multiSelect.ContentTree{
-			Tree:     make(map[string]*multiSelect.TreeData),
-			RootPath: "home",
-			CurPath:  "home",
+			Tree:         make(map[string]*multiSelect.Node),
+			SelectedRepo: make([]types.Repo, 0),
+			RootPath:     "home",
+			CurPath:      "home",
 		}
 		quitSelect := false
 
-		t := tea.NewProgram(multiSelect.InitialModelMultiSelect(fetch, sel, conTree, "Select File/Dir to download", &quitSelect))
+		t := tea.NewProgram(multiSelect.InitialModelMultiSelect(fetch, conTree, "Select File/Dir to download", &quitSelect))
 		if _, err := t.Run(); err != nil {
 			log.Fatal(err)
 		}
@@ -59,7 +56,7 @@ func main() {
 		}
 
 		fmt.Println(conTree.Tree)
-		dt := tea.NewProgram(progress.InitialProgress(sel.Choices))
+		dt := tea.NewProgram(progress.InitialProgress(conTree.SelectedRepo))
 
 		wg := sync.WaitGroup{}
 		wg.Add(1)
@@ -70,7 +67,7 @@ func main() {
 			}
 		}()
 
-		for _, choice := range sel.Choices {
+		for _, choice := range conTree.SelectedRepo {
 			switch choice.Type {
 			case "dir":
 				fmt.Println("Directory Currently not supported")
