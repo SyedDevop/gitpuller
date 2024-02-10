@@ -54,7 +54,7 @@ func main() {
 			fmt.Println("\nNo option chosen 😊 Feel free to explore again!")
 			os.Exit(0)
 		}
-
+		os.Exit(0)
 		dt := tea.NewProgram(progress.InitialProgress(conTree.SelectedRepo))
 
 		wg := sync.WaitGroup{}
@@ -69,7 +69,7 @@ func main() {
 		for _, choice := range conTree.SelectedRepo {
 			switch choice.Type {
 			case "dir":
-				fmt.Println("Directory Currently not supported")
+				// fmt.Println("Directory Currently not supported")
 			case "file":
 				err := progress.DownloadFile(choice, "temp")
 				if err != nil {

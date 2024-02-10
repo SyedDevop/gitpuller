@@ -4,6 +4,7 @@ package multiSelect
 
 import (
 	"fmt"
+	"os"
 	"strings"
 
 	types "github.com/SyedDevop/gitpuller/mytypes"
@@ -29,20 +30,12 @@ var (
 
 type (
 	multiSelectMsg string
+	fetchMsg       string
 	errMess        struct{ error }
 )
 
 func (e errMess) Error() string { return e.error.Error() }
 
-// A Selection represents a choice made in a multiSelect step
-//
-//	type Selection struct {
-//		Choices []types.Repo
-//	}
-//
-//	func (s *Selection) Update(repo types.Repo) {
-//		s.Choices = append(s.Choices, repo) // *(s.Choices)
-//	}
 type Model struct {
 	exit        *bool
 	fetch       *Fetch
@@ -133,8 +126,15 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "d", "D":
 			m.contentTree.RemoveAllCurTreeRepo()
 		case "y":
-			m.contentTree.AppendSelected()
-			return m, tea.Quit
+			dirRepos := m.contentTree.AppendSelected()
+			fmt.Fprint(os.Stdout, []any{"Val %v", dirRepos}...)
+			if len(dirRepos) == 0 {
+				return m, tea.Quit
+			}
+			m.fetch.FethDone = false
+			m.fetch.FetchMess = "Processing... File to be downloaded"
+			// BUG : Folder are all so getting added to SelectedRepo.
+			return m, tea.Batch(FetchAllFolders(&m, dirRepos), m.spinner.Tick)
 		}
 
 	case spinner.TickMsg:
@@ -150,11 +150,51 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			Repo:         m.options,
 		}
 		return m, nil
+	case fetchMsg:
+		return m, tea.Batch(tea.Println("GOte"))
 	case errMess:
 		m.fetch.Err = msg
 		return m, tea.Quit
 	}
 	return m, nil
+}
+
+func FetchAllFolders(model *Model, list []types.Repo) tea.Cmd {
+	return func() tea.Msg {
+		for _, repo := range list {
+			allRepos, err := FetchRepoFiles(repo.URL, model.fetch)
+			if err != nil {
+				return errMess{err}
+			}
+			model.contentTree.SelectedRepo = append(model.contentTree.SelectedRepo, allRepos...)
+		}
+		return fetchMsg("Done")
+	}
+}
+
+func FetchRepoFiles(url string, fetch *Fetch) ([]types.Repo, error) {
+	var repos []types.Repo
+	fetch.Clint.GitRepoUrl = url
+	data, err := fetch.Clint.GetCountents()
+	if err != nil {
+		return nil, err
+	}
+	rawData := util.GetRepoFromContent(*data)
+
+	for _, item := range rawData {
+		if item.Type == "dir" {
+			// Recursively fetch contents from the directory, excluding the directory itself
+			newData, err := FetchRepoFiles(item.URL, fetch)
+			if err != nil {
+				return nil, err
+			}
+			repos = append(repos, newData...)
+		} else {
+			// Append non-directory items to the list
+			repos = append(repos, item)
+		}
+	}
+	return repos, nil
 }
 
 // View is called to draw the multiSelect step

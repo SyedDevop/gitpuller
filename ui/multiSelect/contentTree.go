@@ -1,6 +1,8 @@
 package multiSelect
 
-import types "github.com/SyedDevop/gitpuller/mytypes"
+import (
+	types "github.com/SyedDevop/gitpuller/mytypes"
+)
 
 type Node struct {
 	SelectedRepo map[int]struct{}
@@ -17,40 +19,49 @@ type ContentTree struct {
 // UpdateSelectedRepo toggles the selection status of a repository identified by key.
 // If the repository is already selected, it is deselected (removed from SelectedRepo);
 // if it is not selected, it is added
-func (t *Node) UpdateSelectedRepo(key int) {
-	if _, ok := t.SelectedRepo[key]; ok {
-		delete(t.SelectedRepo, key)
+func (n *Node) UpdateSelectedRepo(key int) {
+	if _, ok := n.SelectedRepo[key]; ok {
+		delete(n.SelectedRepo, key)
 	} else {
-		t.SelectedRepo[key] = struct{}{}
+		n.SelectedRepo[key] = struct{}{}
 	}
 }
 
 // SelecteAllRepo selects all repositories within this node.
 // It does so by adding all indices to SelectedRepo if the number of repositories is greater than the number of selected repositories.
-func (t *Node) SelecteAllRepo() {
-	if len(t.Repo) > len(t.SelectedRepo) {
-		for i := 0; i < len(t.Repo); i++ {
-			t.SelectedRepo[i] = struct{}{}
+func (n *Node) SelecteAllRepo() {
+	if len(n.Repo) > len(n.SelectedRepo) {
+		for i := 0; i < len(n.Repo); i++ {
+			n.SelectedRepo[i] = struct{}{}
 		}
 	}
 }
 
 // RemoveAllRepo deselects (removes) all selected repositories within this node.
-func (t *Node) RemoveAllRepo() {
-	if len(t.SelectedRepo) > 0 {
-		for i := 0; i <= len(t.Repo); i++ {
-			delete(t.SelectedRepo, i)
+func (n *Node) RemoveAllRepo() {
+	if len(n.SelectedRepo) > 0 {
+		for i := 0; i <= len(n.Repo); i++ {
+			delete(n.SelectedRepo, i)
 		}
 	}
 }
 
-// AppendSelected aggregates all selected repositories across all nodes in the tree into the SelectedRepo slice of the ContentTree structure.
-func (c *ContentTree) AppendSelected() {
+// AppendSelected compiles all selected repositories from the ContentTree's Tree map into the SelectedRepo slice.
+// It filters and returns a slice of repositories with type "dir".
+//
+// Returns:
+// - []types.Repo: Slice of "dir" type selected repositories.
+func (c *ContentTree) AppendSelected() []types.Repo {
+	dirRepo := make([]types.Repo, 0)
 	for _, repos := range c.Tree {
 		for selectRepo := range repos.SelectedRepo {
+			if repos.Repo[selectRepo].Type == "dir" {
+				dirRepo = append(dirRepo, repos.Repo[selectRepo])
+			}
 			c.SelectedRepo = append(c.SelectedRepo, repos.Repo[selectRepo])
 		}
 	}
+	return dirRepo
 }
 
 // UpdateTreesSelected updates the selection status of a repository at the current path (CurPath) identified by index.
