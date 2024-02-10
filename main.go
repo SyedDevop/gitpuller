@@ -50,12 +50,11 @@ func main() {
 		if fetch.Err != nil {
 			log.Fatal(fetch.Err.Error())
 		}
-		if quitSelect {
+		if quitSelect || len(conTree.SelectedRepo) <= 0 {
 			fmt.Println("\nNo option chosen 😊 Feel free to explore again!")
 			os.Exit(0)
 		}
 
-		fmt.Println(conTree.Tree)
 		dt := tea.NewProgram(progress.InitialProgress(conTree.SelectedRepo))
 
 		wg := sync.WaitGroup{}
