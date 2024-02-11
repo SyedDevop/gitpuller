@@ -2,14 +2,14 @@ run:
 	@go run . SyedDevop/linux-setup
 
 
-run1:
-	@go run . SyedDevop/gitpuller
+run1:build
+	@./bin/gitpuller SyedDevop/fiyat_list
 
-run2:
-	@go run . SyedDevop/large-file
+run2:build
+	@./bin/gitpuller SyedDevop/large-file
 
 clean:
-	@rm -rf ./temp/*
+	@rm -rf ./temp/.* ./temp/*
 
 build:
 	@go build  -o ./bin/
