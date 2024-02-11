@@ -64,7 +64,6 @@ func (c *Clint) GetCountents() (*[]types.Content, error) {
 	}
 	req.Header.Add("X-GitHub-Api-Version", "2022-11-28")
 
-	fmt.Println(req.Header)
 	var contents []types.Content
 
 	err = c.sendRequest(req, &contents)

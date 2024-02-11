@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strings"
 	"sync"
 
 	"github.com/SyedDevop/gitpuller/api"
@@ -35,9 +36,12 @@ func main() {
 			fmt.Println("Please provide RepoName and UserName url example: gitpuller 'SyedDevop/gitpuller'")
 			return nil
 		}
-		headderMes := fmt.Sprintf("Fetching your contents Form %s Repo", c.Args().Get(0))
-		clint.GitRepoUrl = util.ParseContentsUrl(c.Args().Get(0))
 
+		contentUrl := c.Args().Get(0)
+		headderMes := fmt.Sprintf("Fetching your contents Form %s Repo", contentUrl)
+		clint.GitRepoUrl = util.ParseContentsUrl(contentUrl)
+
+		baseFileName := strings.Split(contentUrl, "/")[1]
 		// Manager for Fetching State of git repo contents.
 		fetch := &multiSelect.Fetch{
 			Clint:     clint,
@@ -47,8 +51,8 @@ func main() {
 		conTree := &multiSelect.ContentTree{
 			Tree:         make(map[string]*multiSelect.Node),
 			SelectedRepo: make([]types.Repo, 0),
-			RootPath:     "home",
-			CurPath:      "home",
+			RootPath:     baseFileName,
+			CurPath:      baseFileName,
 		}
 		quitSelect := false
 
@@ -76,7 +80,7 @@ func main() {
 		}()
 
 		for _, choice := range conTree.SelectedRepo {
-			err := progress.DownloadFile(choice, "gitppppp")
+			err := progress.DownloadFile(choice, baseFileName)
 			if err != nil {
 				releaseErr := dt.ReleaseTerminal()
 				if releaseErr != nil {
