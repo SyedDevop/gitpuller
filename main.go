@@ -27,7 +27,7 @@ func main() {
 	}
 
 	// Access environment variables
-	gitToken := os.Getenv("GIT_TOK")
+	gitToken := os.Getenv("GIT_TOKEN")
 	clint.GitToken = gitToken
 
 	app.Action = func(c *cli.Context) error {
