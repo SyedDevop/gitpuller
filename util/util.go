@@ -29,11 +29,9 @@ func GetRepoFromContent(contents []types.Content) []types.Repo {
 
 // Create directory if not exists.
 func CreateDir(name string) error {
-	if _, err := os.Stat(name); os.IsNotExist(err) {
-		err = os.Mkdir(name, os.ModePerm)
-		if err != nil {
-			return err
-		}
+	err := os.MkdirAll(name, os.ModePerm)
+	if err != nil {
+		return err
 	}
 	return nil
 }

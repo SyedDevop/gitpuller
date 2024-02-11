@@ -67,20 +67,16 @@ func main() {
 		}()
 
 		for _, choice := range conTree.SelectedRepo {
-			switch choice.Type {
-			case "dir":
-				// fmt.Println("Directory Currently not supported")
-			case "file":
-				err := progress.DownloadFile(choice, "temp")
-				if err != nil {
-					releaseErr := dt.ReleaseTerminal()
-					if releaseErr != nil {
-						log.Fatalf("Problem releasing terminal: %v", releaseErr)
-					}
+			err := progress.DownloadFile(choice, "gitppppp")
+			if err != nil {
+				releaseErr := dt.ReleaseTerminal()
+				if releaseErr != nil {
+					log.Fatalf("Problem releasing terminal: %v", releaseErr)
 				}
-
-				dt.Send(progress.DownloadMes(choice.Name))
+				log.Fatalf("Error while downloading %v", err)
 			}
+
+			dt.Send(progress.DownloadMes(choice.Name))
 		}
 
 		dt.Quit()
