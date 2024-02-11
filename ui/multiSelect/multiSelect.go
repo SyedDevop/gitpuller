@@ -4,9 +4,11 @@ package multiSelect
 
 import (
 	"fmt"
+	"strings"
 
-	"github.com/SyedDevop/gitpuller/api"
 	types "github.com/SyedDevop/gitpuller/mytypes"
+	"github.com/SyedDevop/gitpuller/util"
+
 	"github.com/charmbracelet/bubbles/spinner"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
@@ -22,6 +24,7 @@ var (
 	fileSize          = lipgloss.NewStyle().Foreground(lipgloss.Color("240")).Width(8).Align(lipgloss.Right)
 	Directory         = lipgloss.NewStyle().Foreground(lipgloss.Color("99"))
 	File              = lipgloss.NewStyle()
+	pathStyle         = lipgloss.NewStyle().Foreground(lipgloss.Color("#01FAC6")).Bold(true).Padding(0, 1, 0)
 )
 
 type (
@@ -31,52 +34,27 @@ type (
 
 func (e errMess) Error() string { return e.error.Error() }
 
-// A Selection represents a choice made in a multiSelect step
-type Selection struct {
-	Choices []types.Repo
-}
-
-// Update changes the value of a Selection's Choice
-func (s *Selection) Update(repo types.Repo) {
-	s.Choices = append(s.Choices, repo) // *(s.Choices)
-}
-
-type Fetch struct {
-	Err       error
-	Clint     *api.Clint
-	FetchMess string
-	Repo      []types.Repo
-	FethDone  bool
-}
-
-// A multiSelect.Model contains the data for the multiSelect step.
-//
-// It has the required methods that make it a bubbletea.Model
 type Model struct {
-	selected map[int]struct{}
-	choices  *Selection
-	exit     *bool
-	header   string
-	fetch    *Fetch
-	options  []types.Repo
-	spinner  spinner.Model
-	cursor   int
+	exit        *bool
+	fetch       *Fetch
+	contentTree *ContentTree
+	header      string
+	options     []types.Repo
+	spinner     spinner.Model
+	cursor      int
 }
 
-// InitialModelMulti initializes a multiSelect step with
-// the given data
-func InitialModelMultiSelect(clintFetch *Fetch, selection *Selection, header string, quit *bool) Model {
+func InitialModelMultiSelect(clintFetch *Fetch, conTree *ContentTree, header string, quit *bool) Model {
 	s := spinner.New()
 	s.Style = lipgloss.NewStyle().Foreground(lipgloss.Color("63"))
 
 	return Model{
-		options:  make([]types.Repo, 0),
-		selected: make(map[int]struct{}),
-		choices:  selection,
-		header:   titleStyle.Render(header),
-		exit:     quit,
-		spinner:  s,
-		fetch:    clintFetch,
+		options:     make([]types.Repo, 0),
+		header:      titleStyle.Render(header),
+		exit:        quit,
+		spinner:     s,
+		fetch:       clintFetch,
+		contentTree: conTree,
 	}
 }
 
@@ -84,6 +62,7 @@ func (m Model) Init() tea.Cmd {
 	return tea.Batch(m.fetch.fetchContent, m.spinner.Tick)
 }
 
+// TODO : Check if code could be reduce.
 func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
@@ -100,37 +79,58 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.cursor++
 			}
 		case " ":
-			_, ok := m.selected[m.cursor]
-			if ok {
-				delete(m.selected, m.cursor)
-			} else {
-				m.selected[m.cursor] = struct{}{}
+			m.contentTree.UpdateTreesSelected(m.cursor)
+
+		case "backspace", "b":
+
+			// base file path of the whole repo
+			isBasePath := m.contentTree.RootPath == m.contentTree.CurPath
+			if isBasePath {
+				return m, nil
 			}
+
+			// This is sub folder of root and Path.
+			IsRoot, path := util.GetParentPath(m.contentTree.CurPath)
+			if IsRoot {
+				path = m.contentTree.RootPath
+			}
+			chachedNode, ok := m.contentTree.Tree[path]
+			if ok {
+				m.options = chachedNode.Repo
+				m.contentTree.CurPath = path
+			}
+			return m, nil
+
 		case "enter":
 			if m.options[m.cursor].Type != "dir" {
-				_, ok := m.selected[m.cursor]
+				m.contentTree.UpdateTreesSelected(m.cursor)
+			} else {
+				curDir := m.options[m.cursor]
+				chachedNode, ok := m.contentTree.Tree[curDir.Path]
+				m.cursor = 0
+				m.contentTree.CurPath = curDir.Path
+
 				if ok {
-					delete(m.selected, m.cursor)
-				} else {
-					m.selected[m.cursor] = struct{}{}
+					m.options = chachedNode.Repo
+					return m, nil
 				}
+				m.fetch.FethDone = false
+				m.fetch.Clint.GitRepoUrl = curDir.URL
+				return m, m.fetch.fetchContent
 			}
+
 		case "a", "A":
-			if len(m.options) > len(m.selected) {
-				for i := 0; i < len(m.options); i++ {
-					m.selected[i] = struct{}{}
-				}
-			}
+			m.contentTree.SelectAllCurTreeRepo()
 		case "d", "D":
-			for i := 0; i < len(m.options); i++ {
-				delete(m.selected, i)
-			}
+			m.contentTree.RemoveAllCurTreeRepo()
 		case "y":
-			for selectedKey := range m.selected {
-				m.choices.Update(m.options[selectedKey])
-				m.cursor = selectedKey
+			dirRepos := m.contentTree.AppendSelected()
+			if len(dirRepos) == 0 {
+				return m, tea.Quit
 			}
-			return m, tea.Quit
+			m.fetch.FethDone = false
+			m.fetch.FetchMess = "Processing... File to be downloaded"
+			return m, tea.Batch(FetchAllFolders(&m, dirRepos), m.spinner.Tick)
 		}
 
 	case spinner.TickMsg:
@@ -140,20 +140,66 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case multiSelectMsg:
 		m.fetch.FethDone = true
 		m.options = m.fetch.Repo
+
+		m.contentTree.Tree[m.contentTree.CurPath] = &Node{
+			SelectedRepo: make(map[int]struct{}),
+			Repo:         m.options,
+		}
 		return m, nil
 	case errMess:
 		m.fetch.Err = msg
 		return m, tea.Quit
 	}
+
 	return m, nil
+}
+
+func FetchAllFolders(model *Model, list []types.Repo) tea.Cmd {
+	return func() tea.Msg {
+		for _, repo := range list {
+			allRepos, err := FetchRepoFiles(repo.URL, model.fetch)
+			if err != nil {
+				return errMess{err}
+			}
+			model.contentTree.SelectedRepo = append(model.contentTree.SelectedRepo, allRepos...)
+		}
+		return tea.QuitMsg{}
+	}
+}
+
+func FetchRepoFiles(url string, fetch *Fetch) ([]types.Repo, error) {
+	var repos []types.Repo
+	fetch.Clint.GitRepoUrl = url
+	data, err := fetch.Clint.GetCountents()
+	if err != nil {
+		return nil, err
+	}
+	rawData := util.GetRepoFromContent(*data)
+
+	for _, item := range rawData {
+		if item.Type == "dir" {
+			// Recursively fetch contents from the directory, excluding the directory itself
+			newData, err := FetchRepoFiles(item.URL, fetch)
+			if err != nil {
+				return nil, err
+			}
+			repos = append(repos, newData...)
+		} else {
+			// Append non-directory items to the list
+			repos = append(repos, item)
+		}
+	}
+	return repos, nil
 }
 
 // View is called to draw the multiSelect step
 func (m Model) View() string {
-	s := m.header + "\n\n"
+	var s strings.Builder
+	currebtPath := pathStyle.Render("Current Path: (" + m.contentTree.CurPath + ")")
+	s.WriteString(m.header + "\n" + currebtPath + "\n\n")
 	if !m.fetch.FethDone {
-		s += fmt.Sprintf("%s %s... Press 'q' to quit", m.spinner.View(), m.fetch.FetchMess)
-		return s
+		s.WriteString(fmt.Sprintf("%s %s... Press 'q' to quit", m.spinner.View(), m.fetch.FetchMess))
+		return s.String()
 	}
 
 	for i, option := range m.options {
@@ -169,7 +215,7 @@ func (m Model) View() string {
 		}
 
 		checked := " "
-		if _, ok := m.selected[i]; ok {
+		if _, ok := m.contentTree.Tree[m.contentTree.CurPath].SelectedRepo[i]; ok {
 			checked = selectedItemStyle.Render("*")
 			option.Name = selectedItemStyle.Render(option.Name)
 			description = selectedItemStyle.Render(description)
@@ -182,9 +228,9 @@ func (m Model) View() string {
 
 		// title := focusedStyle.Render(option.Name)
 
-		s += fmt.Sprintf("%s %s %s %s\n", cursor, checked, description, option.Name)
+		s.WriteString(fmt.Sprintf("%s %s %s %s\n", cursor, checked, description, option.Name))
 	}
 
-	s += fmt.Sprintf("\nPress %s to confirm choice. (%s to quit) \n", selectedItemStyle.Render("y"), redText.Render("q/ctrl+c"))
-	return s
+	s.WriteString(fmt.Sprintf("\nPress %s to confirm choice. (%s to quit) \n", selectedItemStyle.Render("y"), redText.Render("q/ctrl+c")))
+	return s.String()
 }

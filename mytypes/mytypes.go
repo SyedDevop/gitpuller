@@ -31,5 +31,6 @@ type Repo struct {
 	Type        string
 	Name        string
 	Path        string
+	URL         string
 	Size        uint64
 }

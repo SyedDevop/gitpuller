@@ -11,9 +11,7 @@ import (
 	"github.com/SyedDevop/gitpuller/util"
 )
 
-func DownloadFile(content types.Repo, dest string) error {
-	// fmt.Println("Downloading:", content.Name)
-
+func DownloadFile(content types.Repo, rootPath string) error {
 	// Get the download URL
 	downloadURL := content.DownloadURL
 	if downloadURL == nil {
@@ -28,12 +26,18 @@ func DownloadFile(content types.Repo, dest string) error {
 	}
 	defer resp.Body.Close()
 
-	if dest != "" {
-		util.CreateDir(dest)
+	filePath := filepath.Join(rootPath, content.Name)
+	if content.Name != content.Path {
+		filePath = filepath.Join(rootPath, content.Path)
+	}
+
+	_, dirPath := util.GetParentPath(filePath)
+	if err := util.CreateDir(dirPath); err != nil {
+		return err
 	}
 
 	// Create the file
-	out, err := os.Create(filepath.Join(dest, content.Name))
+	out, err := os.Create(filePath)
 	if err != nil {
 		return err
 	}
@@ -44,9 +48,6 @@ func DownloadFile(content types.Repo, dest string) error {
 	if err != nil {
 		return err
 	}
-
-	// Add delay for testing
-	// time.Sleep(3 * time.Second)
 
 	return nil
 }
