@@ -12,6 +12,7 @@ import (
 	"github.com/SyedDevop/gitpuller/ui/progress"
 	"github.com/SyedDevop/gitpuller/util"
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/joho/godotenv"
 	"github.com/urfave/cli/v2"
 
 	types "github.com/SyedDevop/gitpuller/mytypes"
@@ -20,6 +21,15 @@ import (
 func main() {
 	app := cliapp.CliApp()
 	clint := api.NewClint()
+	err := godotenv.Load()
+	if err != nil {
+		log.Fatal("Error loading .env file")
+	}
+
+	// Access environment variables
+	gitToken := os.Getenv("GIT_TOK")
+	clint.GitToken = gitToken
+
 	app.Action = func(c *cli.Context) error {
 		if c.NArg() <= 0 {
 			fmt.Println("Please provide RepoName and UserName url example: gitpuller 'SyedDevop/gitpuller'")
@@ -54,7 +64,6 @@ func main() {
 			fmt.Println("\nNo option chosen 😊 Feel free to explore again!")
 			os.Exit(0)
 		}
-		os.Exit(0)
 		dt := tea.NewProgram(progress.InitialProgress(conTree.SelectedRepo))
 
 		wg := sync.WaitGroup{}
