@@ -6,6 +6,7 @@ import (
 	"os"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/SyedDevop/gitpuller/api"
 	"github.com/SyedDevop/gitpuller/cliapp"
@@ -78,20 +79,27 @@ func main() {
 				log.Fatal(err)
 			}
 		}()
-
+		start := time.Now()
+		defer func() {
+			fmt.Println("Execution Time: ", time.Since(start))
+		}()
+		wg.Add(len(conTree.SelectedRepo))
 		for _, choice := range conTree.SelectedRepo {
-			err := progress.DownloadFile(choice, baseFileName)
-			if err != nil {
-				releaseErr := dt.ReleaseTerminal()
-				if releaseErr != nil {
-					log.Fatalf("Problem releasing terminal: %v", releaseErr)
+			go func(repo types.Repo) {
+				defer wg.Done()
+				err := progress.DownloadFile(repo, baseFileName)
+				if err != nil {
+					releaseErr := dt.ReleaseTerminal()
+					if releaseErr != nil {
+						log.Fatalf("Problem releasing terminal: %v", releaseErr)
+					}
+					log.Fatalf("Error while downloading %v", err)
 				}
-				log.Fatalf("Error while downloading %v", err)
-			}
 
-			dt.Send(progress.DownloadMes(choice.Name))
+				dt.Send(progress.DownloadMes(repo.Name))
+			}(choice)
 		}
-
+		wg.Wait()
 		dt.Quit()
 		err := dt.ReleaseTerminal()
 		if err != nil {
