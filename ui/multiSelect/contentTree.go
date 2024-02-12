@@ -1,6 +1,8 @@
 package multiSelect
 
 import (
+	"sync"
+
 	types "github.com/SyedDevop/gitpuller/mytypes"
 )
 
@@ -9,11 +11,14 @@ type Node struct {
 	Repo         []types.Repo
 }
 
+// TODO: Rename the FolderRepo to SelectedFolders and SelectedRepo to SelectedFiles
 type ContentTree struct {
 	Tree         map[string]*Node
 	CurPath      string
 	RootPath     string
 	SelectedRepo []types.Repo
+	FolderRepo   []types.Repo
+	Mu           sync.Mutex
 }
 
 // UpdateSelectedRepo toggles the selection status of a repository identified by key.
@@ -51,18 +56,16 @@ func (n *Node) RemoveAllRepo() {
 //
 // Returns:
 // - []types.Repo: Slice of "dir" type selected repositories.
-func (c *ContentTree) AppendSelected() []types.Repo {
-	dirRepo := make([]types.Repo, 0)
+func (c *ContentTree) AppendSelected() {
 	for _, repos := range c.Tree {
 		for selectRepo := range repos.SelectedRepo {
 			if repos.Repo[selectRepo].Type == "dir" {
-				dirRepo = append(dirRepo, repos.Repo[selectRepo])
+				c.FolderRepo = append(c.FolderRepo, repos.Repo[selectRepo])
 			} else {
 				c.SelectedRepo = append(c.SelectedRepo, repos.Repo[selectRepo])
 			}
 		}
 	}
-	return dirRepo
 }
 
 // UpdateTreesSelected updates the selection status of a repository at the current path (CurPath) identified by index.

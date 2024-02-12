@@ -62,7 +62,7 @@ func (m Model) Init() tea.Cmd {
 	return tea.Batch(m.fetch.fetchContent, m.spinner.Tick)
 }
 
-// TODO : Check if code could be reduce.
+// TODO: Check if code could be reduce.
 func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
@@ -124,13 +124,8 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "d", "D":
 			m.contentTree.RemoveAllCurTreeRepo()
 		case "y":
-			dirRepos := m.contentTree.AppendSelected()
-			if len(dirRepos) == 0 {
-				return m, tea.Quit
-			}
-			m.fetch.FethDone = false
-			m.fetch.FetchMess = "Processing... File to be downloaded"
-			return m, tea.Batch(FetchAllFolders(&m, dirRepos), m.spinner.Tick)
+			m.contentTree.AppendSelected()
+			return m, tea.Quit
 		}
 
 	case spinner.TickMsg:
