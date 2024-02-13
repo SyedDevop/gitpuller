@@ -3,6 +3,7 @@ package util
 import (
 	"fmt"
 	"os"
+	"runtime"
 	"strings"
 
 	types "github.com/SyedDevop/gitpuller/mytypes"
@@ -49,7 +50,12 @@ func CreateDir(name string) error {
 // Note: This function is designed to work with UNIX-like file system paths that use "/" as a directory separator. It does not
 // handle Windows paths that use "\" as a directory separator.
 func GetParentPath(path string) (bool, string) {
-	index := strings.LastIndex(path, "/")
+	pathSeparator := "/"
+	if runtime.GOOS == "windows" {
+		pathSeparator = "\\"
+	}
+
+	index := strings.LastIndex(path, pathSeparator)
 	if index == 0 || index == -1 {
 		return true, path
 	} else if index == len(path)-1 {
