@@ -12,7 +12,6 @@ import (
 	"github.com/SyedDevop/gitpuller/cliapp"
 	"github.com/SyedDevop/gitpuller/ui/multiSelect"
 	"github.com/SyedDevop/gitpuller/ui/progress"
-	"github.com/SyedDevop/gitpuller/ui/spinner"
 	"github.com/SyedDevop/gitpuller/util"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/joho/godotenv"
@@ -74,30 +73,30 @@ func main() {
 		}
 
 		wg := sync.WaitGroup{}
-		st := tea.NewProgram(spinner.InitialModelNew("Processing... File to be downloaded..."))
-
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
-			if _, err := st.Run(); err != nil {
-				log.Fatal(err)
-			}
-		}()
-		err = FetchAllFolders(conTree, fetch)
-		if err != nil {
-			if releaseErr := st.ReleaseTerminal(); releaseErr != nil {
-				log.Printf("Problem releasing terminal: %v", releaseErr)
-			}
-			return err
-		}
-		st.Quit()
-		err = st.ReleaseTerminal()
-		if err != nil {
-			if err != nil {
-				log.Printf("Could not release terminal: %v", err)
-				return err
-			}
-		}
+		// st := tea.NewProgram(spinner.InitialModelNew("Processing... File to be downloaded..."))
+		//
+		// wg.Add(1)
+		// go func() {
+		// 	defer wg.Done()
+		// 	if _, err := st.Run(); err != nil {
+		// 		log.Fatal(err)
+		// 	}
+		// }()
+		// err = FetchAllFolders(conTree, fetch)
+		// if err != nil {
+		// 	if releaseErr := st.ReleaseTerminal(); releaseErr != nil {
+		// 		log.Printf("Problem releasing terminal: %v", releaseErr)
+		// 	}
+		// 	return err
+		// }
+		// st.Quit()
+		// err = st.ReleaseTerminal()
+		// if err != nil {
+		// 	if err != nil {
+		// 		log.Printf("Could not release terminal: %v", err)
+		// 		return err
+		// 	}
+		// }
 		dt := tea.NewProgram(progress.InitialProgress(conTree.SelectedRepo))
 
 		wg.Add(1)

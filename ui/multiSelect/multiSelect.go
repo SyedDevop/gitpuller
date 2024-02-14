@@ -5,6 +5,7 @@ package multiSelect
 import (
 	"fmt"
 	"strings"
+	"sync"
 
 	types "github.com/SyedDevop/gitpuller/mytypes"
 	"github.com/SyedDevop/gitpuller/util"
@@ -125,7 +126,9 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.contentTree.RemoveAllCurTreeRepo()
 		case "y":
 			m.contentTree.AppendSelected()
-			return m, tea.Quit
+			m.fetch.FethDone = false
+			m.fetch.FetchMess = "Fetching Repo Files..."
+			return m, FetchAllFolders(&m)
 		}
 
 	case spinner.TickMsg:
@@ -149,14 +152,34 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, nil
 }
 
-func FetchAllFolders(model *Model, list []types.Repo) tea.Cmd {
+func FetchAllFolders(model *Model) tea.Cmd {
 	return func() tea.Msg {
+		wg := sync.WaitGroup{}
+		list := model.contentTree.FolderRepo
+		wg.Add(len(list))
+		errChan := make(chan error)
 		for _, repo := range list {
-			allRepos, err := FetchRepoFiles(repo.URL, model.fetch)
+			go func(repo types.Repo) {
+				defer wg.Done()
+				allRepos, err := FetchRepoFiles(repo.URL, model.fetch)
+				if err != nil {
+					errChan <- err
+				}
+				model.contentTree.Mu.Lock()
+				model.contentTree.SelectedRepo = append(model.contentTree.SelectedRepo, allRepos...)
+				model.contentTree.Mu.Unlock()
+			}(repo)
+		}
+
+		// TODO: check if this can be done in a better way
+		wg.Wait()
+		close(errChan)
+
+		// TODO: Try to return error as list of errors
+		for err := range errChan {
 			if err != nil {
 				return errMess{err}
 			}
-			model.contentTree.SelectedRepo = append(model.contentTree.SelectedRepo, allRepos...)
 		}
 		return tea.QuitMsg{}
 	}
