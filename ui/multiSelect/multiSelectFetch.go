@@ -17,7 +17,7 @@ type Fetch struct {
 }
 
 func (f *Fetch) fetchContent() tea.Msg {
-	contents, err := f.Clint.GetCountents()
+	contents, err := f.Clint.GetCountents(nil)
 	if err != nil {
 		return errMess{err}
 	}

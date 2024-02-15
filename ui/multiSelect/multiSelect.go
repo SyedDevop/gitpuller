@@ -187,8 +187,7 @@ func FetchAllFolders(model *Model) tea.Cmd {
 
 func FetchRepoFiles(url string, fetch *Fetch) ([]types.Repo, error) {
 	var repos []types.Repo
-	fetch.Clint.GitRepoUrl = url
-	data, err := fetch.Clint.GetCountents()
+	data, err := fetch.Clint.GetCountents(&url)
 	if err != nil {
 		return nil, err
 	}

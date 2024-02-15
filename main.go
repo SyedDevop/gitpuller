@@ -173,7 +173,7 @@ func FetchAllFolders(conTree *multiSelect.ContentTree, fetch *multiSelect.Fetch)
 func FetchRepoFiles(url string, fetch *multiSelect.Fetch) ([]types.Repo, error) {
 	var repos []types.Repo
 	fetch.Clint.GitRepoUrl = url
-	data, err := fetch.Clint.GetCountents()
+	data, err := fetch.Clint.GetCountents(nil)
 	if err != nil {
 		return nil, err
 	}

@@ -50,11 +50,14 @@ func (c *Clint) sendRequest(req *http.Request, v interface{}) error {
 	return nil
 }
 
-func (c *Clint) GetCountents() (*[]types.Content, error) {
+func (c *Clint) GetCountents(url *string) (*[]types.Content, error) {
 	if c.GitRepoUrl == "" {
 		return nil, errors.New("GitRepoUrl not set")
 	}
-	req, err := http.NewRequest("GET", c.GitRepoUrl, nil)
+	if url == nil {
+		url = &c.GitRepoUrl
+	}
+	req, err := http.NewRequest("GET", *url, nil)
 	if err != nil {
 		return nil, err
 	}
