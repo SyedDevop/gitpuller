@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"path/filepath"
 	"strings"
 	"sync"
 	"time"
@@ -42,7 +43,8 @@ func main() {
 		headderMes := fmt.Sprintf("Fetching your contents Form %s Repo", contentUrl)
 		clint.GitRepoUrl = util.ParseContentsUrl(contentUrl)
 
-		baseFileName := strings.Split(contentUrl, "/")[1]
+		// TODO: change temp file name to passed name from cli args
+		baseFileName := filepath.Join("temp", strings.Split(contentUrl, "/")[1])
 		// Manager for Fetching State of git repo contents.
 		fetch := &multiSelect.Fetch{
 			Clint:     clint,
