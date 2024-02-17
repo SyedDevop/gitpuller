@@ -14,7 +14,7 @@ import (
 	"github.com/SyedDevop/gitpuller/ui/progress"
 	"github.com/SyedDevop/gitpuller/util"
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/joho/godotenv"
+	_ "github.com/joho/godotenv/autoload"
 	"github.com/urfave/cli/v2"
 
 	types "github.com/SyedDevop/gitpuller/mytypes"
@@ -23,10 +23,6 @@ import (
 func main() {
 	app := cliapp.CliApp()
 	clint := api.NewClint()
-	err := godotenv.Load()
-	if err != nil {
-		log.Fatal("Error loading .env file")
-	}
 
 	// Access environment variables
 	gitToken := os.Getenv("GIT_TOKEN")
