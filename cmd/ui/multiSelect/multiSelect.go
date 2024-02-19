@@ -7,8 +7,8 @@ import (
 	"strings"
 	"sync"
 
-	types "github.com/SyedDevop/gitpuller/mytypes"
-	"github.com/SyedDevop/gitpuller/util"
+	"github.com/SyedDevop/gitpuller/cmd/api"
+	"github.com/SyedDevop/gitpuller/cmd/util"
 
 	"github.com/charmbracelet/bubbles/spinner"
 	tea "github.com/charmbracelet/bubbletea"
@@ -40,7 +40,7 @@ type Model struct {
 	fetch       *Fetch
 	contentTree *ContentTree
 	header      string
-	options     []types.Repo
+	options     []api.Repo
 	spinner     spinner.Model
 	cursor      int
 }
@@ -50,7 +50,7 @@ func InitialModelMultiSelect(clintFetch *Fetch, conTree *ContentTree, header str
 	s.Style = lipgloss.NewStyle().Foreground(lipgloss.Color("63"))
 
 	return Model{
-		options:     make([]types.Repo, 0),
+		options:     make([]api.Repo, 0),
 		header:      titleStyle.Render(header),
 		exit:        quit,
 		spinner:     s,
@@ -159,7 +159,7 @@ func FetchAllFolders(model *Model) tea.Cmd {
 		wg.Add(len(list))
 		errChan := make(chan error)
 		for _, repo := range list {
-			go func(repo types.Repo) {
+			go func(repo api.Repo) {
 				defer wg.Done()
 				allRepos, err := FetchRepoFiles(repo.URL, model.fetch)
 				if err != nil {
@@ -185,8 +185,8 @@ func FetchAllFolders(model *Model) tea.Cmd {
 	}
 }
 
-func FetchRepoFiles(url string, fetch *Fetch) ([]types.Repo, error) {
-	var repos []types.Repo
+func FetchRepoFiles(url string, fetch *Fetch) ([]api.Repo, error) {
+	var repos []api.Repo
 	data, err := fetch.Clint.GetCountents(&url)
 	if err != nil {
 		return nil, err

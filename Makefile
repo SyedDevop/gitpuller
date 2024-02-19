@@ -1,14 +1,14 @@
 run:build
-	@./bin/gitpuller SyedDevop/linux-setup
+	@./bin/gitpuller get SyedDevop/linux-setup
 
 run1:build
-	@./bin/gitpuller SyedDevop/fiyat_list
+	@./bin/gitpuller get SyedDevop/fiyat_list
 
 run2:build
-	@./bin/gitpuller SyedDevop/pc-info
+	@./bin/gitpuller get SyedDevop/pc-info
 
 run3:build
-	@./bin/gitpuller SyedDevop/large-file
+	@./bin/gitpuller get SyedDevop/large-file
 
 clean:
 	@rm -rf ./temp/.* ./temp/*

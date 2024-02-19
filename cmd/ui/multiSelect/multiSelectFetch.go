@@ -1,9 +1,8 @@
 package multiSelect
 
 import (
-	"github.com/SyedDevop/gitpuller/api"
-	types "github.com/SyedDevop/gitpuller/mytypes"
-	"github.com/SyedDevop/gitpuller/util"
+	"github.com/SyedDevop/gitpuller/cmd/api"
+	"github.com/SyedDevop/gitpuller/cmd/util"
 
 	tea "github.com/charmbracelet/bubbletea"
 )
@@ -12,7 +11,7 @@ type Fetch struct {
 	Err       error
 	Clint     *api.Clint
 	FetchMess string
-	Repo      []types.Repo
+	Repo      []api.Repo
 	FethDone  bool
 }
 

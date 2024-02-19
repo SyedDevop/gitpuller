@@ -6,17 +6,17 @@ import (
 	"runtime"
 	"strings"
 
-	types "github.com/SyedDevop/gitpuller/mytypes"
+	"github.com/SyedDevop/gitpuller/cmd/api"
 )
 
 func ParseContentsUrl(path string) string {
 	return fmt.Sprintf("https://api.github.com/repos/%s/contents", path)
 }
 
-func GetRepoFromContent(contents []types.Content) []types.Repo {
-	newRepos := make([]types.Repo, len(contents))
+func GetRepoFromContent(contents []api.Content) []api.Repo {
+	newRepos := make([]api.Repo, len(contents))
 	for i, content := range contents {
-		newRepos[i] = types.Repo{
+		newRepos[i] = api.Repo{
 			Name:        content.Name,
 			Path:        content.Path,
 			Size:        content.Size,

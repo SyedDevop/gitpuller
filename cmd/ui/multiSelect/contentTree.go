@@ -3,12 +3,12 @@ package multiSelect
 import (
 	"sync"
 
-	types "github.com/SyedDevop/gitpuller/mytypes"
+	"github.com/SyedDevop/gitpuller/cmd/api"
 )
 
 type Node struct {
 	SelectedRepo map[int]struct{}
-	Repo         []types.Repo
+	Repo         []api.Repo
 }
 
 // TODO: Rename the FolderRepo to SelectedFolders and SelectedRepo to SelectedFiles
@@ -16,8 +16,8 @@ type ContentTree struct {
 	Tree         map[string]*Node
 	CurPath      string
 	RootPath     string
-	SelectedRepo []types.Repo
-	FolderRepo   []types.Repo
+	SelectedRepo []api.Repo
+	FolderRepo   []api.Repo
 	Mu           sync.Mutex
 }
 
@@ -55,7 +55,7 @@ func (n *Node) RemoveAllRepo() {
 // It filters and returns a slice of repositories with type "dir".
 //
 // Returns:
-// - []types.Repo: Slice of "dir" type selected repositories.
+// - []api.Repo: Slice of "dir" type selected repositories.
 func (c *ContentTree) AppendSelected() {
 	for _, repos := range c.Tree {
 		for selectRepo := range repos.SelectedRepo {
