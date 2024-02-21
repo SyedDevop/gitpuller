@@ -43,7 +43,6 @@ Example: gitpuller get SyedDevop/gitpuller
 			rootPath = args[1]
 		}
 
-		// TODO: change temp file name to passed name from cli args
 		urlFilePath := strings.Split(contentUrl, "/")[1]
 
 		if parentFlag {
