@@ -90,13 +90,14 @@ Example: gitpuller get SyedDevop/gitpuller
 
 		wg.Add(len(conTree.SelectedRepo))
 		for _, choice := range conTree.SelectedRepo {
-			go func(repo api.Repo) {
+			go func(repo *api.Repo) {
 				defer wg.Done()
 				if repo.DownloadURL == nil {
+					// TODO: add file err message to progress emitter
 					dt.Send(progress.DownloadMes(repo.Name))
 					return
 				}
-				err := progress.DownloadFile(&repo, rootPath)
+				err := progress.DownloadFile(repo, rootPath)
 				if err != nil {
 					releaseErr := dt.ReleaseTerminal()
 					if releaseErr != nil {
@@ -106,7 +107,7 @@ Example: gitpuller get SyedDevop/gitpuller
 				}
 
 				dt.Send(progress.DownloadMes(repo.Name))
-			}(choice)
+			}(&choice)
 		}
 		wg.Wait()
 
