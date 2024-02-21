@@ -92,7 +92,11 @@ Example: gitpuller get SyedDevop/gitpuller
 		for _, choice := range conTree.SelectedRepo {
 			go func(repo api.Repo) {
 				defer wg.Done()
-				err := progress.DownloadFile(repo, rootPath)
+				if repo.DownloadURL == nil {
+					dt.Send(progress.DownloadMes(repo.Name))
+					return
+				}
+				err := progress.DownloadFile(&repo, rootPath)
 				if err != nil {
 					releaseErr := dt.ReleaseTerminal()
 					if releaseErr != nil {

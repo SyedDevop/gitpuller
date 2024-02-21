@@ -11,7 +11,7 @@ import (
 	"github.com/SyedDevop/gitpuller/cmd/util"
 )
 
-func DownloadFile(content api.Repo, rootPath string) error {
+func DownloadFile(content *api.Repo, rootPath string) error {
 	// Get the download URL
 	downloadURL := content.DownloadURL
 	if downloadURL == nil {
