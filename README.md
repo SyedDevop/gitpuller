@@ -12,6 +12,6 @@ go install github.com/SyedDevop/gitpuller
 
 ## Features:
 
-- [] View files
-- [] Search Repos
-  - [] select branch
+- [ ] View files
+- [ ] Search Repos
+  - [ ] select branch
