@@ -6,8 +6,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-
-	types "github.com/SyedDevop/gitpuller/mytypes"
+	"os"
 )
 
 type Clint struct {
@@ -17,10 +16,11 @@ type Clint struct {
 }
 
 func NewClint() *Clint {
+	gitToken := os.Getenv("GIT_TOKEN")
 	return &Clint{
 		HTTPClint:  &http.Client{},
 		GitRepoUrl: "",
-		GitToken:   "",
+		GitToken:   gitToken,
 	}
 }
 
@@ -36,7 +36,7 @@ func (c *Clint) sendRequest(req *http.Request, v interface{}) error {
 		return err
 	}
 	if res.StatusCode != http.StatusOK {
-		var badReq types.BadReq
+		var badReq BadReq
 		if err := json.Unmarshal(body, &badReq); err != nil {
 			return err
 		}
@@ -50,11 +50,14 @@ func (c *Clint) sendRequest(req *http.Request, v interface{}) error {
 	return nil
 }
 
-func (c *Clint) GetCountents() (*[]types.Content, error) {
+func (c *Clint) GetCountents(url *string) (*[]Content, error) {
 	if c.GitRepoUrl == "" {
 		return nil, errors.New("GitRepoUrl not set")
 	}
-	req, err := http.NewRequest("GET", c.GitRepoUrl, nil)
+	if url == nil {
+		url = &c.GitRepoUrl
+	}
+	req, err := http.NewRequest("GET", *url, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -64,7 +67,7 @@ func (c *Clint) GetCountents() (*[]types.Content, error) {
 	}
 	req.Header.Add("X-GitHub-Api-Version", "2022-11-28")
 
-	var contents []types.Content
+	var contents []Content
 
 	err = c.sendRequest(req, &contents)
 	if err != nil {

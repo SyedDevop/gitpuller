@@ -1,4 +1,4 @@
-package mytypes
+package api
 
 type Content struct {
 	DownloadURL *string `json:"download_url,omitempty"`

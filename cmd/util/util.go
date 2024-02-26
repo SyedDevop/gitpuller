@@ -3,19 +3,20 @@ package util
 import (
 	"fmt"
 	"os"
+	"runtime"
 	"strings"
 
-	types "github.com/SyedDevop/gitpuller/mytypes"
+	"github.com/SyedDevop/gitpuller/cmd/api"
 )
 
 func ParseContentsUrl(path string) string {
 	return fmt.Sprintf("https://api.github.com/repos/%s/contents", path)
 }
 
-func GetRepoFromContent(contents []types.Content) []types.Repo {
-	newRepos := make([]types.Repo, len(contents))
+func GetRepoFromContent(contents []api.Content) []api.Repo {
+	newRepos := make([]api.Repo, len(contents))
 	for i, content := range contents {
-		newRepos[i] = types.Repo{
+		newRepos[i] = api.Repo{
 			Name:        content.Name,
 			Path:        content.Path,
 			Size:        content.Size,
@@ -49,7 +50,12 @@ func CreateDir(name string) error {
 // Note: This function is designed to work with UNIX-like file system paths that use "/" as a directory separator. It does not
 // handle Windows paths that use "\" as a directory separator.
 func GetParentPath(path string) (bool, string) {
-	index := strings.LastIndex(path, "/")
+	pathSeparator := "/"
+	if runtime.GOOS == "windows" {
+		pathSeparator = "\\"
+	}
+
+	index := strings.LastIndex(path, pathSeparator)
 	if index == 0 || index == -1 {
 		return true, path
 	} else if index == len(path)-1 {

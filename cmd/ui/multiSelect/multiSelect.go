@@ -5,9 +5,10 @@ package multiSelect
 import (
 	"fmt"
 	"strings"
+	"sync"
 
-	types "github.com/SyedDevop/gitpuller/mytypes"
-	"github.com/SyedDevop/gitpuller/util"
+	"github.com/SyedDevop/gitpuller/cmd/api"
+	"github.com/SyedDevop/gitpuller/cmd/util"
 
 	"github.com/charmbracelet/bubbles/spinner"
 	tea "github.com/charmbracelet/bubbletea"
@@ -39,7 +40,7 @@ type Model struct {
 	fetch       *Fetch
 	contentTree *ContentTree
 	header      string
-	options     []types.Repo
+	options     []api.Repo
 	spinner     spinner.Model
 	cursor      int
 }
@@ -49,7 +50,7 @@ func InitialModelMultiSelect(clintFetch *Fetch, conTree *ContentTree, header str
 	s.Style = lipgloss.NewStyle().Foreground(lipgloss.Color("63"))
 
 	return Model{
-		options:     make([]types.Repo, 0),
+		options:     make([]api.Repo, 0),
 		header:      titleStyle.Render(header),
 		exit:        quit,
 		spinner:     s,
@@ -62,7 +63,7 @@ func (m Model) Init() tea.Cmd {
 	return tea.Batch(m.fetch.fetchContent, m.spinner.Tick)
 }
 
-// TODO : Check if code could be reduce.
+// TODO: Check if code could be reduce.
 func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
@@ -124,13 +125,10 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "d", "D":
 			m.contentTree.RemoveAllCurTreeRepo()
 		case "y":
-			dirRepos := m.contentTree.AppendSelected()
-			if len(dirRepos) == 0 {
-				return m, tea.Quit
-			}
+			m.contentTree.AppendSelected()
 			m.fetch.FethDone = false
-			m.fetch.FetchMess = "Processing... File to be downloaded"
-			return m, tea.Batch(FetchAllFolders(&m, dirRepos), m.spinner.Tick)
+			m.fetch.FetchMess = "Fetching Repo Files..."
+			return m, FetchAllFolders(&m)
 		}
 
 	case spinner.TickMsg:
@@ -154,23 +152,42 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, nil
 }
 
-func FetchAllFolders(model *Model, list []types.Repo) tea.Cmd {
+func FetchAllFolders(model *Model) tea.Cmd {
 	return func() tea.Msg {
+		wg := sync.WaitGroup{}
+		list := model.contentTree.FolderRepo
+		wg.Add(len(list))
+		errChan := make(chan error)
 		for _, repo := range list {
-			allRepos, err := FetchRepoFiles(repo.URL, model.fetch)
+			go func(repo api.Repo) {
+				defer wg.Done()
+				allRepos, err := FetchRepoFiles(repo.URL, model.fetch)
+				if err != nil {
+					errChan <- err
+				}
+				model.contentTree.Mu.Lock()
+				model.contentTree.SelectedRepo = append(model.contentTree.SelectedRepo, allRepos...)
+				model.contentTree.Mu.Unlock()
+			}(repo)
+		}
+
+		// TODO: check if this can be done in a better way
+		wg.Wait()
+		close(errChan)
+
+		// TODO: Try to return error as list of errors
+		for err := range errChan {
 			if err != nil {
 				return errMess{err}
 			}
-			model.contentTree.SelectedRepo = append(model.contentTree.SelectedRepo, allRepos...)
 		}
 		return tea.QuitMsg{}
 	}
 }
 
-func FetchRepoFiles(url string, fetch *Fetch) ([]types.Repo, error) {
-	var repos []types.Repo
-	fetch.Clint.GitRepoUrl = url
-	data, err := fetch.Clint.GetCountents()
+func FetchRepoFiles(url string, fetch *Fetch) ([]api.Repo, error) {
+	var repos []api.Repo
+	data, err := fetch.Clint.GetCountents(&url)
 	if err != nil {
 		return nil, err
 	}

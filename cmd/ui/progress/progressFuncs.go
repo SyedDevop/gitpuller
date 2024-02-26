@@ -7,11 +7,11 @@ import (
 	"os"
 	"path/filepath"
 
-	types "github.com/SyedDevop/gitpuller/mytypes"
-	"github.com/SyedDevop/gitpuller/util"
+	"github.com/SyedDevop/gitpuller/cmd/api"
+	"github.com/SyedDevop/gitpuller/cmd/util"
 )
 
-func DownloadFile(content types.Repo, rootPath string) error {
+func DownloadFile(content *api.Repo, rootPath string) error {
 	// Get the download URL
 	downloadURL := content.DownloadURL
 	if downloadURL == nil {
@@ -26,14 +26,13 @@ func DownloadFile(content types.Repo, rootPath string) error {
 	}
 	defer resp.Body.Close()
 
-	filePath := filepath.Join(rootPath, content.Name)
-	if content.Name != content.Path {
-		filePath = filepath.Join(rootPath, content.Path)
-	}
+	filePath := filepath.Join(rootPath, content.Path)
 
-	_, dirPath := util.GetParentPath(filePath)
-	if err := util.CreateDir(dirPath); err != nil {
-		return err
+	isRoot, dirPath := util.GetParentPath(filePath)
+	if !isRoot {
+		if err := util.CreateDir(dirPath); err != nil {
+			return err
+		}
 	}
 
 	// Create the file

@@ -3,7 +3,7 @@ package progress
 import (
 	"fmt"
 
-	"github.com/SyedDevop/gitpuller/mytypes"
+	"github.com/SyedDevop/gitpuller/cmd/api"
 	"github.com/charmbracelet/bubbles/progress"
 	"github.com/charmbracelet/bubbles/spinner"
 	tea "github.com/charmbracelet/bubbletea"
@@ -12,7 +12,7 @@ import (
 
 type model struct {
 	err      error
-	packages []mytypes.Repo
+	packages []api.Repo
 	spinner  spinner.Model
 	progress progress.Model
 	index    int
@@ -34,7 +34,7 @@ type (
 
 func (e ErrMess) Error() string { return e.error.Error() }
 
-func InitialProgress(list []mytypes.Repo) model {
+func InitialProgress(list []api.Repo) model {
 	p := progress.New(
 		progress.WithDefaultGradient(),
 		progress.WithWidth(40),
