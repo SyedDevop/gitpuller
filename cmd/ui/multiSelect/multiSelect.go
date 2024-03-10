@@ -40,7 +40,7 @@ type Model struct {
 	fetch       *Fetch
 	contentTree *ContentTree
 	header      string
-	options     []api.Repo
+	options     []api.TreeElement
 	spinner     spinner.Model
 	cursor      int
 }
@@ -50,7 +50,7 @@ func InitialModelMultiSelect(clintFetch *Fetch, conTree *ContentTree, header str
 	s.Style = lipgloss.NewStyle().Foreground(lipgloss.Color("63"))
 
 	return Model{
-		options:     make([]api.Repo, 0),
+		options:     make([]api.TreeElement, 0),
 		header:      titleStyle.Render(header),
 		exit:        quit,
 		spinner:     s,
@@ -103,7 +103,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, nil
 
 		case "enter":
-			if m.options[m.cursor].Type != "dir" {
+			if m.options[m.cursor].Type != "tree" {
 				m.contentTree.UpdateTreesSelected(m.cursor)
 			} else {
 				curDir := m.options[m.cursor]
@@ -116,7 +116,8 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					return m, nil
 				}
 				m.fetch.FethDone = false
-				m.fetch.Clint.GitRepoUrl = curDir.URL
+				// FIX : this the url can be empty.
+				m.fetch.Clint.GitRepoUrl = *curDir.URL
 				return m, m.fetch.fetchContent
 			}
 
@@ -159,9 +160,10 @@ func FetchAllFolders(model *Model) tea.Cmd {
 		wg.Add(len(list))
 		errChan := make(chan error)
 		for _, repo := range list {
-			go func(repo api.Repo) {
+			go func(repo api.TreeElement) {
 				defer wg.Done()
-				allRepos, err := FetchRepoFiles(repo.URL, model.fetch)
+				// FIX : check if url nil
+				allRepos, err := FetchRepoFiles(*repo.URL, model.fetch)
 				if err != nil {
 					errChan <- err
 				}
@@ -185,24 +187,15 @@ func FetchAllFolders(model *Model) tea.Cmd {
 	}
 }
 
-func FetchRepoFiles(url string, fetch *Fetch) ([]api.Repo, error) {
-	var repos []api.Repo
-	data, err := fetch.Clint.GetCountents(&url)
+func FetchRepoFiles(url string, fetch *Fetch) ([]api.TreeElement, error) {
+	var repos []api.TreeElement
+	newUrl := fmt.Sprintf("%s?recursive=1", url)
+	data, err := fetch.Clint.GetCountents(&newUrl)
 	if err != nil {
 		return nil, err
 	}
-	rawData := util.GetRepoFromContent(*data)
-
-	for _, item := range rawData {
-		if item.Type == "dir" {
-			// Recursively fetch contents from the directory, excluding the directory itself
-			newData, err := FetchRepoFiles(item.URL, fetch)
-			if err != nil {
-				return nil, err
-			}
-			repos = append(repos, newData...)
-		} else {
-			// Append non-directory items to the list
+	for _, item := range data {
+		if item.Type != "tree" {
 			repos = append(repos, item)
 		}
 	}
@@ -220,32 +213,43 @@ func (m Model) View() string {
 	}
 
 	for i, option := range m.options {
-		fsSize := fileSize.Render(humanize.Bytes(option.Size))
-		fsType := fileType.Render(option.Type)
+		size := humanize.Bytes(0)
+		if option.Size != nil {
+			size = humanize.Bytes(uint64(*option.Size))
+		}
+		fsSize := fileSize.Render(size)
+		itemType := ""
+		if option.Type == "tree" {
+			itemType = "dir"
+		} else {
+			itemType = "file"
+		}
+
+		fsType := fileType.Render(itemType)
 		description := fmt.Sprintf("%s %s", fsType, fsSize)
 
 		cursor := " "
 		if m.cursor == i {
 			cursor = focusedStyle.Render(">")
-			option.Name = focusedStyle.Render(option.Name)
+			option.Path = focusedStyle.Render(option.Path)
 			description = focusedStyle.Render(description)
 		}
 
 		checked := " "
 		if _, ok := m.contentTree.Tree[m.contentTree.CurPath].SelectedRepo[i]; ok {
 			checked = selectedItemStyle.Render("*")
-			option.Name = selectedItemStyle.Render(option.Name)
+			option.Path = selectedItemStyle.Render(option.Path)
 			description = selectedItemStyle.Render(description)
 		}
 
-		option.Name = File.Render(option.Name)
-		if option.Type != "file" {
-			option.Name = Directory.Render(option.Name)
+		option.Path = File.Render(option.Path)
+		if option.Type == "tree" {
+			option.Path = Directory.Render(option.Path)
 		}
 
 		// title := focusedStyle.Render(option.Name)
 
-		s.WriteString(fmt.Sprintf("%s %s %s %s\n", cursor, checked, description, option.Name))
+		s.WriteString(fmt.Sprintf("%s %s %s %s\n", cursor, checked, description, option.Path))
 	}
 
 	s.WriteString(fmt.Sprintf("\nPress %s to confirm choice. (%s to quit) \n", selectedItemStyle.Render("y"), redText.Render("q/ctrl+c")))

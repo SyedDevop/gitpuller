@@ -12,7 +12,7 @@ import (
 
 type model struct {
 	err      error
-	packages []api.Repo
+	packages []api.TreeElement
 	spinner  spinner.Model
 	progress progress.Model
 	index    int
@@ -34,7 +34,7 @@ type (
 
 func (e ErrMess) Error() string { return e.error.Error() }
 
-func InitialProgress(list []api.Repo) model {
+func InitialProgress(list []api.TreeElement) model {
 	p := progress.New(
 		progress.WithDefaultGradient(),
 		progress.WithWidth(40),
@@ -53,7 +53,7 @@ func InitialProgress(list []api.Repo) model {
 
 func (m model) Init() tea.Cmd {
 	return tea.Batch(
-		tea.Printf("%s %s", checkMark, m.packages[m.index].Name),
+		tea.Printf("%s %s", checkMark, m.packages[m.index].Path),
 		m.spinner.Tick,
 	)
 }
@@ -81,7 +81,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		batch := tea.Batch(
 			progressCmd,
-			tea.Printf("%s %s", checkMark, m.packages[m.index].Name), // print success message above our program
+			tea.Printf("%s %s", checkMark, m.packages[m.index].Path), // print success message above our program
 		)
 		return m, batch
 
@@ -117,7 +117,7 @@ func (m model) View() string {
 	prog := m.progress.View()
 	cellsAvail := max(0, m.width-lipgloss.Width(spin+prog+pkgCount))
 
-	pkgName := currentPkgNameStyle.Render(m.packages[m.index].Name)
+	pkgName := currentPkgNameStyle.Render(m.packages[m.index].Path)
 	info := lipgloss.NewStyle().MaxWidth(cellsAvail).Render("Downloading " + pkgName)
 
 	// cellsRemaining := max(0, m.width-lipgloss.Width(spin+info+prog+pkgCount))

@@ -1,5 +1,5 @@
 run:build
-	@./bin/gitpuller get SyedDevop/linux-setup ./temp -p
+	@./bin/gitpuller get SyedDevop/Timer-dash ./temp -p
 
 run1:build
 	@./bin/gitpuller get SyedDevop/fiyat_list ./temp -p
