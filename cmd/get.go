@@ -57,7 +57,7 @@ Example: gitpuller get SyedDevop/gitpuller
 		}
 		conTree := &multiSelect.ContentTree{
 			Tree:         make(map[string]*multiSelect.Node),
-			SelectedRepo: make([]api.TreeElement, 0),
+			SelectedRepo: make(map[string][]api.TreeElement),
 			FolderRepo:   make([]api.TreeElement, 0),
 			RootPath:     urlFilePath,
 			CurPath:      urlFilePath,
