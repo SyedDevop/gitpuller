@@ -50,7 +50,7 @@ func (c *Clint) sendRequest(req *http.Request, v interface{}) error {
 	return nil
 }
 
-func (c *Clint) GetCountents(url *string) (*[]Content, error) {
+func (c *Clint) GetCountents(url *string) ([]TreeElement, error) {
 	if c.GitRepoUrl == "" {
 		return nil, errors.New("GitRepoUrl not set")
 	}
@@ -67,11 +67,11 @@ func (c *Clint) GetCountents(url *string) (*[]Content, error) {
 	}
 	req.Header.Add("X-GitHub-Api-Version", "2022-11-28")
 
-	var contents []Content
+	var contents Tree
 
 	err = c.sendRequest(req, &contents)
 	if err != nil {
 		return nil, err
 	}
-	return &contents, nil
+	return contents.Tree, nil
 }

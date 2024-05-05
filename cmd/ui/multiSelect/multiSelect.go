@@ -4,6 +4,8 @@ package multiSelect
 
 import (
 	"fmt"
+	"io/fs"
+	"path/filepath"
 	"strings"
 	"sync"
 
@@ -23,6 +25,7 @@ var (
 	redText           = lipgloss.NewStyle().Foreground(lipgloss.Color("196")).Bold(true)
 	fileType          = lipgloss.NewStyle().Foreground(lipgloss.Color("243")).Width(4)
 	fileSize          = lipgloss.NewStyle().Foreground(lipgloss.Color("240")).Width(8).Align(lipgloss.Right)
+	fileMode          = lipgloss.NewStyle().Foreground(lipgloss.Color("240"))
 	Directory         = lipgloss.NewStyle().Foreground(lipgloss.Color("99"))
 	File              = lipgloss.NewStyle()
 	pathStyle         = lipgloss.NewStyle().Foreground(lipgloss.Color("#01FAC6")).Bold(true).Padding(0, 1, 0)
@@ -31,16 +34,20 @@ var (
 type (
 	multiSelectMsg string
 	errMess        struct{ error }
+	TestMess       string
 )
 
 func (e errMess) Error() string { return e.error.Error() }
+
+// func (t TestMess) String() string { return t }
 
 type Model struct {
 	exit        *bool
 	fetch       *Fetch
 	contentTree *ContentTree
 	header      string
-	options     []api.Repo
+	testStr     string
+	options     []api.TreeElement
 	spinner     spinner.Model
 	cursor      int
 }
@@ -50,12 +57,13 @@ func InitialModelMultiSelect(clintFetch *Fetch, conTree *ContentTree, header str
 	s.Style = lipgloss.NewStyle().Foreground(lipgloss.Color("63"))
 
 	return Model{
-		options:     make([]api.Repo, 0),
+		options:     make([]api.TreeElement, 0),
 		header:      titleStyle.Render(header),
 		exit:        quit,
 		spinner:     s,
 		fetch:       clintFetch,
 		contentTree: conTree,
+		testStr:     "strat",
 	}
 }
 
@@ -103,20 +111,20 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, nil
 
 		case "enter":
-			if m.options[m.cursor].Type != "dir" {
+			if m.options[m.cursor].Type != "tree" {
 				m.contentTree.UpdateTreesSelected(m.cursor)
 			} else {
 				curDir := m.options[m.cursor]
 				chachedNode, ok := m.contentTree.Tree[curDir.Path]
 				m.cursor = 0
-				m.contentTree.CurPath = curDir.Path
+				m.contentTree.CurPath = filepath.Join(m.contentTree.CurPath, curDir.Path)
 
 				if ok {
 					m.options = chachedNode.Repo
 					return m, nil
 				}
 				m.fetch.FethDone = false
-				m.fetch.Clint.GitRepoUrl = curDir.URL
+				m.fetch.Clint.GitRepoUrl = *curDir.URL
 				return m, m.fetch.fetchContent
 			}
 
@@ -131,6 +139,9 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, FetchAllFolders(&m)
 		}
 
+	case TestMess:
+		m.testStr = "Gam3"
+		return m, tea.Println(msg)
 	case spinner.TickMsg:
 		var cmd tea.Cmd
 		m.spinner, cmd = m.spinner.Update(msg)
@@ -159,14 +170,15 @@ func FetchAllFolders(model *Model) tea.Cmd {
 		wg.Add(len(list))
 		errChan := make(chan error)
 		for _, repo := range list {
-			go func(repo api.Repo) {
+			go func(repo api.TreeElement) {
 				defer wg.Done()
-				allRepos, err := FetchRepoFiles(repo.URL, model.fetch)
+				allRepos, err := FetchRepoFiles(*repo.URL, model.fetch)
 				if err != nil {
 					errChan <- err
 				}
 				model.contentTree.Mu.Lock()
-				model.contentTree.SelectedRepo = append(model.contentTree.SelectedRepo, allRepos...)
+				curPath := filepath.Join(model.contentTree.CurPath, repo.Path)
+				model.contentTree.SelectedRepo[curPath] = append(model.contentTree.SelectedRepo[curPath], allRepos...)
 				model.contentTree.Mu.Unlock()
 			}(repo)
 		}
@@ -185,67 +197,79 @@ func FetchAllFolders(model *Model) tea.Cmd {
 	}
 }
 
-func FetchRepoFiles(url string, fetch *Fetch) ([]api.Repo, error) {
-	var repos []api.Repo
-	data, err := fetch.Clint.GetCountents(&url)
+func FetchRepoFiles(url string, fetch *Fetch) ([]api.TreeElement, error) {
+	var repos []api.TreeElement
+	newUrl := fmt.Sprintf("%s?recursive=1", url)
+	data, err := fetch.Clint.GetCountents(&newUrl)
 	if err != nil {
 		return nil, err
 	}
-	rawData := util.GetRepoFromContent(*data)
-
-	for _, item := range rawData {
-		if item.Type == "dir" {
-			// Recursively fetch contents from the directory, excluding the directory itself
-			newData, err := FetchRepoFiles(item.URL, fetch)
-			if err != nil {
-				return nil, err
-			}
-			repos = append(repos, newData...)
-		} else {
-			// Append non-directory items to the list
+	for _, item := range data {
+		if item.Type != "tree" {
 			repos = append(repos, item)
 		}
 	}
 	return repos, nil
 }
 
+func getMode(mode api.FileMode) fs.FileMode {
+	switch mode {
+	case api.FileModeTree:
+		return fs.ModeDir | fs.ModePerm
+	default:
+		return fs.FileMode(mode)
+	}
+}
+
 // View is called to draw the multiSelect step
 func (m Model) View() string {
 	var s strings.Builder
 	currebtPath := pathStyle.Render("Current Path: (" + m.contentTree.CurPath + ")")
-	s.WriteString(m.header + "\n" + currebtPath + "\n\n")
+	s.WriteString(m.header + "\n" + m.testStr + currebtPath + "\n\n")
 	if !m.fetch.FethDone {
 		s.WriteString(fmt.Sprintf("%s %s... Press 'q' to quit", m.spinner.View(), m.fetch.FetchMess))
 		return s.String()
 	}
 
 	for i, option := range m.options {
-		fsSize := fileSize.Render(humanize.Bytes(option.Size))
-		fsType := fileType.Render(option.Type)
-		description := fmt.Sprintf("%s %s", fsType, fsSize)
+		size := humanize.Bytes(0)
+		if option.Size != nil {
+			size = humanize.Bytes(uint64(*option.Size))
+		}
+		fsSize := fileSize.Render(size)
+		itemType := ""
+		if option.Type == "tree" {
+			itemType = "dir"
+		} else {
+			itemType = "file"
+		}
+
+		fsType := fileType.Render(itemType)
+		fsMode := fileMode.Render(api.ToOSFileMode(option.Mode).String())
+		description := fmt.Sprintf("%s %s %s", fsMode, fsType, fsSize)
 
 		cursor := " "
 		if m.cursor == i {
 			cursor = focusedStyle.Render(">")
-			option.Name = focusedStyle.Render(option.Name)
+			option.Path = focusedStyle.Render(option.Path)
 			description = focusedStyle.Render(description)
 		}
 
 		checked := " "
 		if _, ok := m.contentTree.Tree[m.contentTree.CurPath].SelectedRepo[i]; ok {
 			checked = selectedItemStyle.Render("*")
-			option.Name = selectedItemStyle.Render(option.Name)
+			option.Path = selectedItemStyle.Render(option.Path)
 			description = selectedItemStyle.Render(description)
 		}
 
-		option.Name = File.Render(option.Name)
-		if option.Type != "file" {
-			option.Name = Directory.Render(option.Name)
+		option.Path = File.Render(option.Path)
+		if option.Type == "tree" {
+			option.Path = Directory.Render(option.Path)
 		}
 
 		// title := focusedStyle.Render(option.Name)
 
-		s.WriteString(fmt.Sprintf("%s %s %s %s\n", cursor, checked, description, option.Name))
+		s.WriteString(fmt.Sprintf("%s %s %s %s\n", cursor, checked, description, option.Path))
 	}
 
 	s.WriteString(fmt.Sprintf("\nPress %s to confirm choice. (%s to quit) \n", selectedItemStyle.Render("y"), redText.Render("q/ctrl+c")))
