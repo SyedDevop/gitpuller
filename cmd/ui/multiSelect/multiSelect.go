@@ -34,7 +34,6 @@ var (
 type (
 	multiSelectMsg string
 	errMess        struct{ error }
-	TestMess       string
 )
 
 func (e errMess) Error() string { return e.error.Error() }
@@ -46,7 +45,6 @@ type Model struct {
 	fetch       *Fetch
 	contentTree *ContentTree
 	header      string
-	testStr     string
 	options     []api.TreeElement
 	spinner     spinner.Model
 	cursor      int
@@ -63,7 +61,6 @@ func InitialModelMultiSelect(clintFetch *Fetch, conTree *ContentTree, header str
 		spinner:     s,
 		fetch:       clintFetch,
 		contentTree: conTree,
-		testStr:     "strat",
 	}
 }
 
@@ -139,9 +136,6 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, FetchAllFolders(&m)
 		}
 
-	case TestMess:
-		m.testStr = "Gam3"
-		return m, tea.Println(msg)
 	case spinner.TickMsg:
 		var cmd tea.Cmd
 		m.spinner, cmd = m.spinner.Update(msg)
@@ -225,7 +219,7 @@ func getMode(mode api.FileMode) fs.FileMode {
 func (m Model) View() string {
 	var s strings.Builder
 	currebtPath := pathStyle.Render("Current Path: (" + m.contentTree.CurPath + ")")
-	s.WriteString(m.header + "\n" + m.testStr + currebtPath + "\n\n")
+	s.WriteString(m.header + "\n" + currebtPath + "\n\n")
 	if !m.fetch.FethDone {
 		s.WriteString(fmt.Sprintf("%s %s... Press 'q' to quit", m.spinner.View(), m.fetch.FetchMess))
 		return s.String()

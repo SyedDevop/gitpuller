@@ -91,7 +91,6 @@ Example: gitpuller get SyedDevop/gitpuller
 					go func(repo *api.TreeElement) {
 						defer wg.Done()
 						path := filepath.Join(rootPath, repoPath)
-						// fmt.Printf("downloading:: to %s :: Data %+v \n", path, repo)
 						err := progress.DownloadFile(repo, path)
 						if err != nil {
 							releaseErr := dt.ReleaseTerminal()
