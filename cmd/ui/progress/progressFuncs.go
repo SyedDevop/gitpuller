@@ -22,7 +22,7 @@ func DownloadFile(content *api.TreeElement, rootPath string) error {
 	}
 	req, err := http.NewRequest("GET", *downloadURL, nil)
 
-	gitToken := os.Getenv("GIT_TOKEN")
+	gitToken := util.GetGitToken()
 	if gitToken != "" {
 		req.Header.Add("Authorization", "Bearer "+gitToken)
 	}

@@ -6,7 +6,8 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"os"
+
+	"github.com/SyedDevop/gitpuller/cmd/util"
 )
 
 type Clint struct {
@@ -16,11 +17,10 @@ type Clint struct {
 }
 
 func NewClint() *Clint {
-	gitToken := os.Getenv("GIT_TOKEN")
 	return &Clint{
 		HTTPClint:  &http.Client{},
 		GitRepoUrl: "",
-		GitToken:   gitToken,
+		GitToken:   util.GetGitToken(),
 	}
 }
 
