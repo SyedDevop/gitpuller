@@ -88,10 +88,10 @@ Example: gitpuller get SyedDevop/gitpuller
 		for filePath, choice := range conTree.SelectedRepo {
 			go func(repos []api.TreeElement, repoPath string) {
 				for _, repo := range repos {
-					go func(repo *api.TreeElement) {
+					go func(repo api.TreeElement) {
 						defer wg.Done()
 						path := filepath.Join(rootPath, repoPath)
-						err := progress.DownloadFile(repo, path)
+						err := progress.DownloadFile(&repo, path)
 						if err != nil {
 							releaseErr := dt.ReleaseTerminal()
 							if releaseErr != nil {
@@ -100,7 +100,7 @@ Example: gitpuller get SyedDevop/gitpuller
 							log.Fatalf("Error while downloading %v", err)
 						}
 						dt.Send(progress.DownloadMes(repo.Path))
-					}(&repo)
+					}(repo)
 				}
 			}(choice, filePath)
 		}
