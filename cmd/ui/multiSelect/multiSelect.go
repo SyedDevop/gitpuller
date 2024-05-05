@@ -4,6 +4,8 @@ package multiSelect
 
 import (
 	"fmt"
+	"io/fs"
+	"path/filepath"
 	"strings"
 	"sync"
 
@@ -23,6 +25,7 @@ var (
 	redText           = lipgloss.NewStyle().Foreground(lipgloss.Color("196")).Bold(true)
 	fileType          = lipgloss.NewStyle().Foreground(lipgloss.Color("243")).Width(4)
 	fileSize          = lipgloss.NewStyle().Foreground(lipgloss.Color("240")).Width(8).Align(lipgloss.Right)
+	fileMode          = lipgloss.NewStyle().Foreground(lipgloss.Color("240"))
 	Directory         = lipgloss.NewStyle().Foreground(lipgloss.Color("99"))
 	File              = lipgloss.NewStyle()
 	pathStyle         = lipgloss.NewStyle().Foreground(lipgloss.Color("#01FAC6")).Bold(true).Padding(0, 1, 0)
@@ -31,15 +34,19 @@ var (
 type (
 	multiSelectMsg string
 	errMess        struct{ error }
+	TestMess       string
 )
 
 func (e errMess) Error() string { return e.error.Error() }
+
+// func (t TestMess) String() string { return t }
 
 type Model struct {
 	exit        *bool
 	fetch       *Fetch
 	contentTree *ContentTree
 	header      string
+	testStr     string
 	options     []api.TreeElement
 	spinner     spinner.Model
 	cursor      int
@@ -56,6 +63,7 @@ func InitialModelMultiSelect(clintFetch *Fetch, conTree *ContentTree, header str
 		spinner:     s,
 		fetch:       clintFetch,
 		contentTree: conTree,
+		testStr:     "strat",
 	}
 }
 
@@ -109,14 +117,13 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				curDir := m.options[m.cursor]
 				chachedNode, ok := m.contentTree.Tree[curDir.Path]
 				m.cursor = 0
-				m.contentTree.CurPath = curDir.Path
+				m.contentTree.CurPath = filepath.Join(m.contentTree.CurPath, curDir.Path)
 
 				if ok {
 					m.options = chachedNode.Repo
 					return m, nil
 				}
 				m.fetch.FethDone = false
-				// FIX : this the url can be empty.
 				m.fetch.Clint.GitRepoUrl = *curDir.URL
 				return m, m.fetch.fetchContent
 			}
@@ -132,6 +139,9 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, FetchAllFolders(&m)
 		}
 
+	case TestMess:
+		m.testStr = "Gam3"
+		return m, tea.Println(msg)
 	case spinner.TickMsg:
 		var cmd tea.Cmd
 		m.spinner, cmd = m.spinner.Update(msg)
@@ -162,13 +172,13 @@ func FetchAllFolders(model *Model) tea.Cmd {
 		for _, repo := range list {
 			go func(repo api.TreeElement) {
 				defer wg.Done()
-				// FIX : check if url nil
 				allRepos, err := FetchRepoFiles(*repo.URL, model.fetch)
 				if err != nil {
 					errChan <- err
 				}
 				model.contentTree.Mu.Lock()
-				model.contentTree.SelectedRepo = append(model.contentTree.SelectedRepo, allRepos...)
+				curPath := filepath.Join(model.contentTree.CurPath, repo.Path)
+				model.contentTree.SelectedRepo[curPath] = append(model.contentTree.SelectedRepo[curPath], allRepos...)
 				model.contentTree.Mu.Unlock()
 			}(repo)
 		}
@@ -202,11 +212,20 @@ func FetchRepoFiles(url string, fetch *Fetch) ([]api.TreeElement, error) {
 	return repos, nil
 }
 
+func getMode(mode api.FileMode) fs.FileMode {
+	switch mode {
+	case api.FileModeTree:
+		return fs.ModeDir | fs.ModePerm
+	default:
+		return fs.FileMode(mode)
+	}
+}
+
 // View is called to draw the multiSelect step
 func (m Model) View() string {
 	var s strings.Builder
 	currebtPath := pathStyle.Render("Current Path: (" + m.contentTree.CurPath + ")")
-	s.WriteString(m.header + "\n" + currebtPath + "\n\n")
+	s.WriteString(m.header + "\n" + m.testStr + currebtPath + "\n\n")
 	if !m.fetch.FethDone {
 		s.WriteString(fmt.Sprintf("%s %s... Press 'q' to quit", m.spinner.View(), m.fetch.FetchMess))
 		return s.String()
@@ -226,7 +245,8 @@ func (m Model) View() string {
 		}
 
 		fsType := fileType.Render(itemType)
-		description := fmt.Sprintf("%s %s", fsType, fsSize)
+		fsMode := fileMode.Render(api.ToOSFileMode(option.Mode).String())
+		description := fmt.Sprintf("%s %s %s", fsMode, fsType, fsSize)
 
 		cursor := " "
 		if m.cursor == i {

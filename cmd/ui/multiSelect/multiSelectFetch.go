@@ -15,7 +15,15 @@ type Fetch struct {
 }
 
 func (f *Fetch) fetchContent() tea.Msg {
+	// logF, err := tea.LogToFile("debug.log", "debug")
+	// if err != nil {
+	// 	fmt.Println("fatal:", err)
+	// 	os.Exit(1)
+	// }
+	// defer logF.Close()
+
 	contents, err := f.Clint.GetCountents(nil)
+	// fmt.Fprintf(logF, "FetchContent#Tea: Url = %s :: Data = %+v :: DataLen = %d \n", f.Clint.GitRepoUrl, contents, len(contents))
 	if err != nil {
 		return errMess{err}
 	}

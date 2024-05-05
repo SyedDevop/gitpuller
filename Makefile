@@ -10,6 +10,11 @@ run2:build
 run3:build
 	@./bin/gitpuller get SyedDevop/large-file ./temp -p
 
+run4:build
+	@./bin/gitpuller get SyedDevop/tax-care-admin-dashboard ./temp -p
+
+run5:build
+	@./bin/gitpuller get SyedDevop/linux-setup ./temp -p
 clean:
 	@rm -rf ./temp/.* ./temp/*
 

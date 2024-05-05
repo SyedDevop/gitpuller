@@ -51,18 +51,26 @@ func (n *Node) RemoveAllRepo() {
 	}
 }
 
+func (c *ContentTree) SelectedRepoLen() int {
+	tempTen := 0
+	for _, v := range c.SelectedRepo {
+		tempTen += len(v)
+	}
+	return tempTen
+}
+
 // AppendSelected compiles all selected repositories from the ContentTree's Tree map into the SelectedRepo slice.
 // It filters and returns a slice of repositories with type "dir".
 //
 // Returns:
 // - []api.Repo: Slice of "dir" type selected repositories.
-func (c *ContentTree) AppendSelected(name string) {
-	for _, repos := range c.Tree {
+func (c *ContentTree) AppendSelected() {
+	for key, repos := range c.Tree {
 		for selectRepo := range repos.SelectedRepo {
 			if repos.Repo[selectRepo].Type == "tree" {
 				c.FolderRepo = append(c.FolderRepo, repos.Repo[selectRepo])
 			} else {
-				c.SelectedRepo[name] = append(c.SelectedRepo[name], repos.Repo[selectRepo])
+				c.SelectedRepo[key] = append(c.SelectedRepo[key], repos.Repo[selectRepo])
 			}
 		}
 	}

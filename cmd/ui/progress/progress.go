@@ -3,7 +3,6 @@ package progress
 import (
 	"fmt"
 
-	"github.com/SyedDevop/gitpuller/cmd/api"
 	"github.com/charmbracelet/bubbles/progress"
 	"github.com/charmbracelet/bubbles/spinner"
 	tea "github.com/charmbracelet/bubbletea"
@@ -11,8 +10,9 @@ import (
 )
 
 type model struct {
-	err      error
-	packages []api.TreeElement
+	err error
+	// packages []api.TreeElement
+	listLen  int
 	spinner  spinner.Model
 	progress progress.Model
 	index    int
@@ -34,7 +34,7 @@ type (
 
 func (e ErrMess) Error() string { return e.error.Error() }
 
-func InitialProgress(list []api.TreeElement) model {
+func InitialProgress(listLen int) model {
 	p := progress.New(
 		progress.WithDefaultGradient(),
 		progress.WithWidth(40),
@@ -43,7 +43,7 @@ func InitialProgress(list []api.TreeElement) model {
 	s := spinner.New()
 	s.Style = lipgloss.NewStyle().Foreground(lipgloss.Color("63"))
 	return model{
-		packages: list,
+		listLen:  listLen,
 		spinner:  s,
 		progress: p,
 		index:    0,
@@ -53,7 +53,9 @@ func InitialProgress(list []api.TreeElement) model {
 
 func (m model) Init() tea.Cmd {
 	return tea.Batch(
-		tea.Printf("%s %s", checkMark, m.packages[m.index].Path),
+
+		// TODO : Some how gave name to the package
+		tea.Printf("%s %s", checkMark, string(rune(m.index))),
 		m.spinner.Tick,
 	)
 }
@@ -68,20 +70,23 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, tea.Quit
 		}
 	case DownloadMes:
-		if m.index >= len(m.packages)-1 {
+
+		if m.index >= m.listLen-1 {
 			// Everything's been installed. We're done!
 			m.done = true
 			return m, tea.Quit
 		}
 
 		// Update progress bar
-		progressCmd := m.progress.SetPercent((float64(m.index) + 1) / float64(len(m.packages)))
+		progressCmd := m.progress.SetPercent((float64(m.index) + 1) / float64(m.listLen))
 
 		m.index++
 
 		batch := tea.Batch(
 			progressCmd,
-			tea.Printf("%s %s", checkMark, m.packages[m.index].Path), // print success message above our program
+
+			// TODO : Some how gave name to the package
+			tea.Printf("%s %s", checkMark, string(m.index)), // print success message above our program
 		)
 		return m, batch
 
@@ -104,7 +109,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m model) View() string {
-	n := len(m.packages)
+	n := m.listLen
 	w := lipgloss.Width(fmt.Sprintf("%d", n))
 
 	if m.done {
@@ -117,7 +122,8 @@ func (m model) View() string {
 	prog := m.progress.View()
 	cellsAvail := max(0, m.width-lipgloss.Width(spin+prog+pkgCount))
 
-	pkgName := currentPkgNameStyle.Render(m.packages[m.index].Path)
+	// TODO : Some how gave name to the package
+	pkgName := currentPkgNameStyle.Render(string(m.index))
 	info := lipgloss.NewStyle().MaxWidth(cellsAvail).Render("Downloading " + pkgName)
 
 	// cellsRemaining := max(0, m.width-lipgloss.Width(spin+info+prog+pkgCount))

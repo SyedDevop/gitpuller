@@ -45,10 +45,6 @@ Example: gitpuller get SyedDevop/gitpuller
 
 		urlFilePath := strings.Split(contentUrl, "/")[1]
 
-		if parentFlag {
-			rootPath = filepath.Join(rootPath, urlFilePath)
-		}
-
 		// Manager for Fetching State of git repo contents.
 		fetch := &multiSelect.Fetch{
 			Clint:     clint,
@@ -78,48 +74,44 @@ Example: gitpuller get SyedDevop/gitpuller
 		}
 
 		wg := sync.WaitGroup{}
-		// dt := tea.NewProgram(progress.InitialProgress(conTree.SelectedRepo))
 
-		// wg.Add(1)
-		// go func() {
-		// 	defer wg.Done()
-		// 	if _, err := dt.Run(); err != nil {
-		// 		log.Fatal(err)
-		// 	}
-		// }()
-
-		wg.Add(len(conTree.SelectedRepo))
-		for _, choice := range conTree.SelectedRepo {
-			fmt.Println("Got : ", choice.Path)
-
-			// go func(repo *api.TreeElement) {
-			// 	defer wg.Done()
-			// 	if repo.URL == nil {
-			// 		// TODO: add file err message to progress emitter
-			// 		// dt.Send(progress.DownloadMes(repo.Path))
-			// 		return
-			// 	}
-			err := progress.DownloadFile(&choice, rootPath)
-			if err != nil {
-				// releaseErr := dt.ReleaseTerminal()
-				// if releaseErr != nil {
-				// 	log.Fatalf("Problem releasing terminal: %v", releaseErr)
-				// }
-				log.Fatalf("Error while downloading %v", err)
+		dt := tea.NewProgram(progress.InitialProgress(conTree.SelectedRepoLen()))
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			if _, err := dt.Run(); err != nil {
+				log.Fatal(err)
 			}
+		}()
 
-			wg.Done()
-			// 	// TODO: Parse name from path
-			// 	// dt.Send(progress.DownloadMes(repo.Path))
-			// }(&choice)
+		wg.Add(conTree.SelectedRepoLen())
+		for filePath, choice := range conTree.SelectedRepo {
+			go func(repos []api.TreeElement, repoPath string) {
+				for _, repo := range repos {
+					go func(repo *api.TreeElement) {
+						defer wg.Done()
+						path := filepath.Join(rootPath, repoPath)
+						// fmt.Printf("downloading:: to %s :: Data %+v \n", path, repo)
+						err := progress.DownloadFile(repo, path)
+						if err != nil {
+							releaseErr := dt.ReleaseTerminal()
+							if releaseErr != nil {
+								log.Fatalf("Problem releasing terminal: %v", releaseErr)
+							}
+							log.Fatalf("Error while downloading %v", err)
+						}
+						dt.Send(progress.DownloadMes(repo.Path))
+					}(&repo)
+				}
+			}(choice, filePath)
 		}
-		wg.Wait()
 
-		// dt.Quit()
-		// err := dt.ReleaseTerminal()
-		// if err != nil {
-		// 	log.Fatalf("Could not release terminal: %v", err)
-		// }
+		wg.Wait()
+		dt.Quit()
+		err := dt.ReleaseTerminal()
+		if err != nil {
+			log.Fatalf("Could not release terminal: %v", err)
+		}
 	},
 }
 
