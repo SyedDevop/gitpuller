@@ -1,16 +1,17 @@
 package multiSelect
 
 import (
-	"github.com/SyedDevop/gitpuller/cmd/api"
+	"github.com/SyedDevop/gitpuller/pkg/client"
+	"github.com/SyedDevop/gitpuller/pkg/git"
 
 	tea "github.com/charmbracelet/bubbletea"
 )
 
 type Fetch struct {
 	Err       error
-	Clint     *api.Clint
+	Clint     *client.Clint
 	FetchMess string
-	Repo      []api.TreeElement
+	Repo      []git.TreeElement
 	FethDone  bool
 }
 
