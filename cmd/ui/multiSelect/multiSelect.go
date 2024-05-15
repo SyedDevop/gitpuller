@@ -4,13 +4,12 @@ package multiSelect
 
 import (
 	"fmt"
-	"io/fs"
 	"path/filepath"
 	"strings"
 	"sync"
 
-	"github.com/SyedDevop/gitpuller/cmd/api"
 	"github.com/SyedDevop/gitpuller/cmd/util"
+	"github.com/SyedDevop/gitpuller/pkg/git"
 
 	"github.com/charmbracelet/bubbles/spinner"
 	tea "github.com/charmbracelet/bubbletea"
@@ -45,7 +44,7 @@ type Model struct {
 	fetch       *Fetch
 	contentTree *ContentTree
 	header      string
-	options     []api.TreeElement
+	options     []git.TreeElement
 	spinner     spinner.Model
 	cursor      int
 }
@@ -55,7 +54,7 @@ func InitialModelMultiSelect(clintFetch *Fetch, conTree *ContentTree, header str
 	s.Style = lipgloss.NewStyle().Foreground(lipgloss.Color("63"))
 
 	return Model{
-		options:     make([]api.TreeElement, 0),
+		options:     make([]git.TreeElement, 0),
 		header:      titleStyle.Render(header),
 		exit:        quit,
 		spinner:     s,
@@ -164,7 +163,7 @@ func FetchAllFolders(model *Model) tea.Cmd {
 		wg.Add(len(list))
 		errChan := make(chan error)
 		for _, repo := range list {
-			go func(repo api.TreeElement) {
+			go func(repo git.TreeElement) {
 				defer wg.Done()
 				allRepos, err := FetchRepoFiles(*repo.URL, model.fetch)
 				if err != nil {
@@ -191,8 +190,8 @@ func FetchAllFolders(model *Model) tea.Cmd {
 	}
 }
 
-func FetchRepoFiles(url string, fetch *Fetch) ([]api.TreeElement, error) {
-	var repos []api.TreeElement
+func FetchRepoFiles(url string, fetch *Fetch) ([]git.TreeElement, error) {
+	var repos []git.TreeElement
 	newUrl := fmt.Sprintf("%s?recursive=1", url)
 	data, err := fetch.Clint.GetCountents(&newUrl)
 	if err != nil {
@@ -206,14 +205,14 @@ func FetchRepoFiles(url string, fetch *Fetch) ([]api.TreeElement, error) {
 	return repos, nil
 }
 
-func getMode(mode api.FileMode) fs.FileMode {
-	switch mode {
-	case api.FileModeTree:
-		return fs.ModeDir | fs.ModePerm
-	default:
-		return fs.FileMode(mode)
-	}
-}
+// func getMode(mode api.FileMode) fs.FileMode {
+// 	switch mode {
+// 	case api.FileModeTree:
+// 		return fs.ModeDir | fs.ModePerm
+// 	default:
+// 		return fs.FileMode(mode)
+// 	}
+// }
 
 // View is called to draw the multiSelect step
 func (m Model) View() string {
@@ -239,7 +238,7 @@ func (m Model) View() string {
 		}
 
 		fsType := fileType.Render(itemType)
-		fsMode := fileMode.Render(api.ToOSFileMode(option.Mode).String())
+		fsMode := fileMode.Render(git.ToOSFileMode(option.Mode).String())
 		description := fmt.Sprintf("%s %s %s", fsMode, fsType, fsSize)
 
 		cursor := " "

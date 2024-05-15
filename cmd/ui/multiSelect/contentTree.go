@@ -3,12 +3,12 @@ package multiSelect
 import (
 	"sync"
 
-	"github.com/SyedDevop/gitpuller/cmd/api"
+	"github.com/SyedDevop/gitpuller/pkg/git"
 )
 
 type Node struct {
 	SelectedRepo map[int]struct{}
-	Repo         []api.TreeElement
+	Repo         []git.TreeElement
 }
 
 // TODO: Rename the FolderRepo to SelectedFolders and SelectedRepo to SelectedFiles
@@ -16,8 +16,8 @@ type ContentTree struct {
 	Tree         map[string]*Node
 	CurPath      string
 	RootPath     string
-	SelectedRepo map[string][]api.TreeElement
-	FolderRepo   []api.TreeElement
+	SelectedRepo map[string][]git.TreeElement
+	FolderRepo   []git.TreeElement
 	Mu           sync.Mutex
 }
 

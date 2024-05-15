@@ -11,10 +11,11 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/SyedDevop/gitpuller/cmd/api"
 	"github.com/SyedDevop/gitpuller/cmd/ui/multiSelect"
 	"github.com/SyedDevop/gitpuller/cmd/ui/progress"
 	"github.com/SyedDevop/gitpuller/cmd/util"
+	"github.com/SyedDevop/gitpuller/pkg/client"
+	"github.com/SyedDevop/gitpuller/pkg/git"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/spf13/cobra"
 )
@@ -33,10 +34,10 @@ Example: gitpuller get SyedDevop/gitpuller
 		if len(args) == 0 {
 			cobra.CheckErr("Please provide RepoName and UserName url example: gitpuller get 'SyedDevop/gitpuller'")
 		}
-		clint := api.NewClint()
+		newClient := client.NewClint()
 		contentUrl := args[0]
 		headderMes := fmt.Sprintf("Fetching your contents Form %s Repo", contentUrl)
-		clint.GitRepoUrl = util.ParseContentsUrl(contentUrl, "main")
+		newClient.GitRepoUrl = util.ParseContentsUrl(contentUrl, "main")
 
 		rootPath := ""
 		if len(args) == 2 {
@@ -47,14 +48,14 @@ Example: gitpuller get SyedDevop/gitpuller
 
 		// Manager for Fetching State of git repo contents.
 		fetch := &multiSelect.Fetch{
-			Clint:     clint,
+			Clint:     newClient,
 			FethDone:  false,
 			FetchMess: headderMes,
 		}
 		conTree := &multiSelect.ContentTree{
 			Tree:         make(map[string]*multiSelect.Node),
-			SelectedRepo: make(map[string][]api.TreeElement),
-			FolderRepo:   make([]api.TreeElement, 0),
+			SelectedRepo: make(map[string][]git.TreeElement),
+			FolderRepo:   make([]git.TreeElement, 0),
 			RootPath:     urlFilePath,
 			CurPath:      urlFilePath,
 		}
@@ -86,12 +87,12 @@ Example: gitpuller get SyedDevop/gitpuller
 
 		wg.Add(conTree.SelectedRepoLen())
 		for filePath, choice := range conTree.SelectedRepo {
-			go func(repos []api.TreeElement, repoPath string) {
+			go func(repos []git.TreeElement, repoPath string) {
 				for _, repo := range repos {
-					go func(repo api.TreeElement) {
+					go func(repo git.TreeElement) {
 						defer wg.Done()
 						path := filepath.Join(rootPath, repoPath)
-						err := progress.DownloadFile(&repo, path)
+						err := client.DownloadFile(&repo, path)
 						if err != nil {
 							releaseErr := dt.ReleaseTerminal()
 							if releaseErr != nil {
