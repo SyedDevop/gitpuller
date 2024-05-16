@@ -9,6 +9,7 @@ import (
 	"sync"
 
 	"github.com/SyedDevop/gitpuller/cmd/util"
+	"github.com/SyedDevop/gitpuller/pkg/client"
 	"github.com/SyedDevop/gitpuller/pkg/git"
 
 	"github.com/charmbracelet/bubbles/spinner"
@@ -31,17 +32,14 @@ var (
 )
 
 type (
-	multiSelectMsg string
-	errMess        struct{ error }
+	errMess struct{ error }
 )
 
 func (e errMess) Error() string { return e.error.Error() }
 
-// func (t TestMess) String() string { return t }
-
 type Model struct {
 	exit        *bool
-	fetch       *Fetch
+	fetch       *client.Fetch
 	contentTree *ContentTree
 	header      string
 	options     []git.TreeElement
@@ -49,7 +47,7 @@ type Model struct {
 	cursor      int
 }
 
-func InitialModelMultiSelect(clintFetch *Fetch, conTree *ContentTree, header string, quit *bool) Model {
+func InitialModelMultiSelect(clintFetch *client.Fetch, conTree *ContentTree, header string, quit *bool) Model {
 	s := spinner.New()
 	s.Style = lipgloss.NewStyle().Foreground(lipgloss.Color("63"))
 
@@ -64,7 +62,7 @@ func InitialModelMultiSelect(clintFetch *Fetch, conTree *ContentTree, header str
 }
 
 func (m Model) Init() tea.Cmd {
-	return tea.Batch(m.fetch.fetchContent, m.spinner.Tick)
+	return tea.Batch(m.fetch.FetchContent, m.spinner.Tick)
 }
 
 // TODO: Check if code could be reduce.
@@ -121,7 +119,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				}
 				m.fetch.FethDone = false
 				m.fetch.Clint.GitRepoUrl = *curDir.URL
-				return m, m.fetch.fetchContent
+				return m, m.fetch.FetchContent
 			}
 
 		case "a", "A":
@@ -139,7 +137,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		var cmd tea.Cmd
 		m.spinner, cmd = m.spinner.Update(msg)
 		return m, cmd
-	case multiSelectMsg:
+	case client.FetchDoneMess:
 		m.fetch.FethDone = true
 		m.options = m.fetch.Repo
 
@@ -148,6 +146,10 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			Repo:         m.options,
 		}
 		return m, nil
+	case client.FetchErrMess:
+		m.fetch.Err = msg
+		return m, tea.Quit
+		// FIX :(#1:a::ref:FetchAllFolders) correct this error handling
 	case errMess:
 		m.fetch.Err = msg
 		return m, tea.Quit
@@ -181,6 +183,7 @@ func FetchAllFolders(model *Model) tea.Cmd {
 		close(errChan)
 
 		// TODO: Try to return error as list of errors
+		// FIX :(#1:a::)
 		for err := range errChan {
 			if err != nil {
 				return errMess{err}
@@ -190,7 +193,7 @@ func FetchAllFolders(model *Model) tea.Cmd {
 	}
 }
 
-func FetchRepoFiles(url string, fetch *Fetch) ([]git.TreeElement, error) {
+func FetchRepoFiles(url string, fetch *client.Fetch) ([]git.TreeElement, error) {
 	var repos []git.TreeElement
 	newUrl := fmt.Sprintf("%s?recursive=1", url)
 	data, err := fetch.Clint.GetCountents(&newUrl)
