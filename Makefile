@@ -16,7 +16,7 @@ run4:build
 run5:build
 	@./bin/gitpuller get SyedDevop/linux-setup ./temp -p
 clean:
-	@rm -rf ./temp/.* ./temp/*
+	@rm -rf ./temp/*
 
 build:
 	@go build  -o ./bin/

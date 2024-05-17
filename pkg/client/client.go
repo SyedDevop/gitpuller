@@ -6,9 +6,12 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"os"
+	"time"
 
 	"github.com/SyedDevop/gitpuller/cmd/util"
 	"github.com/SyedDevop/gitpuller/pkg/git"
+	tea "github.com/charmbracelet/bubbletea"
 )
 
 type Clint struct {
@@ -25,17 +28,33 @@ func NewClint() *Clint {
 	}
 }
 
+func time12(t time.Time) string {
+	return t.Format("Monday, 02-Jan-06 03:04:05.000 PM MST")
+}
+
 func (c *Clint) sendRequest(req *http.Request, v interface{}) error {
+	logF, err := tea.LogToFile("debug.log", "debug")
+	if err != nil {
+		fmt.Println("fatal:", err)
+		os.Exit(1)
+	}
+	defer logF.Close()
+	startTime := time.Now()
+
+	fmt.Fprintf(logF, "GetCountents#Requast Started: @ = %s \n", time12(startTime))
 	res, err := c.HTTPClint.Do(req)
 	if err != nil {
 		return err
 	}
 	defer res.Body.Close()
+	fmt.Fprintf(logF, "GetCountents#Requast Completed: took = %d:ms finished @ = %s \n", time.Duration(time.Since(startTime)).Milliseconds(), time12(time.Now()))
 
 	body, err := io.ReadAll(res.Body)
 	if err != nil {
 		return err
 	}
+
+	fmt.Fprintf(logF, "GetCountents#Requast red to buffer: took = %d:ms finished @ = %s \n", time.Duration(time.Since(startTime)).Milliseconds(), time12(time.Now()))
 	if res.StatusCode != http.StatusOK {
 		var badReq git.BadReq
 		if err := json.Unmarshal(body, &badReq); err != nil {
@@ -48,6 +67,8 @@ func (c *Clint) sendRequest(req *http.Request, v interface{}) error {
 	if err := json.Unmarshal(body, v); err != nil {
 		return err
 	}
+
+	fmt.Fprintf(logF, "GetCountents#Requast finished marshaling: took = %d:ms finished @ = %s \n", time.Duration(time.Since(startTime)).Milliseconds(), time12(time.Now()))
 	return nil
 }
 
