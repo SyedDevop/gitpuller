@@ -47,7 +47,7 @@ Example: gitpuller get SyedDevop/gitpuller
 		urlFilePath := strings.Split(contentUrl, "/")[1]
 
 		// Manager for Fetching State of git repo contents.
-		fetch := &multiSelect.Fetch{
+		fetch := &client.Fetch{
 			Clint:     newClient,
 			FethDone:  false,
 			FetchMess: headderMes,

@@ -172,15 +172,17 @@ func FetchAllFolders(model *Model) tea.Cmd {
 					errChan <- err
 				}
 				model.contentTree.Mu.Lock()
+				defer model.contentTree.Mu.Unlock()
 				curPath := filepath.Join(model.contentTree.CurPath, repo.Path)
 				model.contentTree.SelectedRepo[curPath] = append(model.contentTree.SelectedRepo[curPath], allRepos...)
-				model.contentTree.Mu.Unlock()
 			}(repo)
 		}
 
-		// TODO: check if this can be done in a better way
-		wg.Wait()
-		close(errChan)
+		// Start a goroutine to wait for all fetch operations to complete
+		go func() {
+			wg.Wait()      // Wait for all worker goroutines to call wg.Done()
+			close(errChan) // Close the error channel once all workers are done
+		}()
 
 		// TODO: Try to return error as list of errors
 		// FIX :(#1:a::)
