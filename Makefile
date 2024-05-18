@@ -17,6 +17,8 @@ run5:build
 	@./bin/gitpuller get SyedDevop/linux-setup ./temp -p
 clean:
 	@rm -rf ./temp/*
+tailnetlog:
+	tail -f network_test.log | bat --paging=never
 
 build:
 	@go build  -o ./bin/
