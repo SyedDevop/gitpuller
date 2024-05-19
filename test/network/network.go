@@ -3,12 +3,13 @@ package main
 import (
 	"flag"
 	"fmt"
+	"log"
 	"net/http"
 	"os"
 	"sync"
 	"time"
 
-	"github.com/SyedDevop/gitpuller/log"
+	mylog "github.com/SyedDevop/gitpuller/log"
 )
 
 var LogPath = "network_test.log"
@@ -18,11 +19,12 @@ func main() {
 	flag.IntVar(&reqTimes, "rt", 10, "How many times should the request be sent")
 	flag.Parse()
 
-	logF := log.LogFile(&LogPath)
+	logF := mylog.LogFile(&LogPath)
 	defer logF.Close()
 
 	tookChan := make(chan time.Duration, reqTimes)
 	wg := sync.WaitGroup{}
+
 	fmt.Fprint(logF, "Starting the test with: "+fmt.Sprint(reqTimes)+" times\n")
 	wg.Add(reqTimes)
 	for i := range reqTimes {
@@ -52,7 +54,14 @@ func main() {
 }
 
 func req() *http.Response {
-	resp, err := http.Get("https://api.github.com")
+	req, err := http.NewRequest("GET", "https://api.github.com/repos/SyedDevop/fiyat_list/git/trees/main", nil)
+	if err != nil {
+		log.Fatalln(err)
+	}
+	req.Header.Add("Accept", "application/vnd.github+json")
+	req.Header.Add("X-GitHub-Api-Version", "2022-11-28")
+
+	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		fmt.Println("Error:", err)
 		return nil
