@@ -4,18 +4,9 @@ Copyright © 2024 Syed Uzair Ahmed <syeds.devops007@gmail.com>
 package cmd
 
 import (
-	"fmt"
 	"log"
-	"os"
-	"path/filepath"
-	"strings"
-	"sync"
 
-	"github.com/SyedDevop/gitpuller/cmd/ui/multiSelect"
-	"github.com/SyedDevop/gitpuller/cmd/ui/progress"
-	"github.com/SyedDevop/gitpuller/cmd/util"
-	"github.com/SyedDevop/gitpuller/pkg/client"
-	"github.com/SyedDevop/gitpuller/pkg/git"
+	"github.com/SyedDevop/gitpuller/pkg/pages"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/spf13/cobra"
 )
@@ -30,88 +21,101 @@ var getCmd = &cobra.Command{
 
 Example: gitpuller get SyedDevop/gitpuller
   `,
-	Run: func(_ *cobra.Command, args []string) {
-		if len(args) == 0 {
-			cobra.CheckErr("Please provide RepoName and UserName url example: gitpuller get 'SyedDevop/gitpuller'")
-		}
-		newClient := client.NewClint()
-		contentUrl := args[0]
-		headderMes := fmt.Sprintf("Fetching your contents Form %s Repo", contentUrl)
-		newClient.GitRepoUrl = util.ParseContentsUrl(contentUrl, "main")
-
-		rootPath := ""
-		if len(args) == 2 {
-			rootPath = args[1]
+	Run: func(cmd *cobra.Command, args []string) {
+		fileLogger, err := tea.LogToFile("tea.log", "debug")
+		if err != nil {
+			log.Fatal("fatal:", err)
 		}
 
-		urlFilePath := strings.Split(contentUrl, "/")[1]
+		defer fileLogger.Close()
 
-		// Manager for Fetching State of git repo contents.
-		fetch := &client.Fetch{
-			Clint:     newClient,
-			FethDone:  false,
-			FetchMess: headderMes,
-		}
-		conTree := &multiSelect.ContentTree{
-			Tree:         make(map[string]*multiSelect.Node),
-			SelectedRepo: make(map[string][]git.TreeElement),
-			FolderRepo:   make([]git.TreeElement, 0),
-			RootPath:     urlFilePath,
-			CurPath:      urlFilePath,
-		}
-		quitSelect := false
-
-		t := tea.NewProgram(multiSelect.InitialModelMultiSelect(fetch, conTree, "Select File/Dir to download", &quitSelect))
-		if _, err := t.Run(); err != nil {
+		page := pages.NewPageModel(cmd, fileLogger)
+		p := tea.NewProgram(page, tea.WithAltScreen())
+		if _, err := p.Run(); err != nil {
 			log.Fatal(err)
 		}
 
-		if fetch.Err != nil {
-			log.Fatal(fetch.Err.Error())
-		}
-		if quitSelect || len(conTree.SelectedRepo) <= 0 {
-			fmt.Println("\nNo option chosen 😊 Feel free to explore again!")
-			os.Exit(0)
-		}
-
-		wg := sync.WaitGroup{}
-
-		dt := tea.NewProgram(progress.InitialProgress(conTree.SelectedRepoLen()))
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
-			if _, err := dt.Run(); err != nil {
-				log.Fatal(err)
-			}
-		}()
-
-		wg.Add(conTree.SelectedRepoLen())
-		for filePath, choice := range conTree.SelectedRepo {
-			go func(repos []git.TreeElement, repoPath string) {
-				for _, repo := range repos {
-					go func(repo git.TreeElement) {
-						defer wg.Done()
-						path := filepath.Join(rootPath, repoPath)
-						err := client.DownloadFile(&repo, path)
-						if err != nil {
-							releaseErr := dt.ReleaseTerminal()
-							if releaseErr != nil {
-								log.Fatalf("Problem releasing terminal: %v", releaseErr)
-							}
-							log.Fatalf("Error while downloading %v", err)
-						}
-						dt.Send(progress.DownloadMes(repo.Path))
-					}(repo)
-				}
-			}(choice, filePath)
-		}
-
-		wg.Wait()
-		dt.Quit()
-		err := dt.ReleaseTerminal()
-		if err != nil {
-			log.Fatalf("Could not release terminal: %v", err)
-		}
+		// if len(args) == 0 {
+		// 	cobra.CheckErr("Please provide RepoName and UserName url example: gitpuller get 'SyedDevop/gitpuller'")
+		// }
+		// newClient := client.NewClint()
+		// contentUrl := args[0]
+		// headderMes := fmt.Sprintf("Fetching your contents Form %s Repo", contentUrl)
+		// newClient.GitRepoUrl = util.ParseContentsUrl(contentUrl, "main")
+		//
+		// rootPath := ""
+		// if len(args) == 2 {
+		// 	rootPath = args[1]
+		// }
+		//
+		// urlFilePath := strings.Split(contentUrl, "/")[1]
+		//
+		// // Manager for Fetching State of git repo contents.
+		// fetch := &client.Fetch{
+		// 	Clint:     newClient,
+		// 	FethDone:  false,
+		// 	FetchMess: headderMes,
+		// }
+		// conTree := &multiSelect.ContentTree{
+		// 	Tree:         make(map[string]*multiSelect.Node),
+		// 	SelectedRepo: make(map[string][]git.TreeElement),
+		// 	FolderRepo:   make([]git.TreeElement, 0),
+		// 	RootPath:     urlFilePath,
+		// 	CurPath:      urlFilePath,
+		// }
+		// quitSelect := false
+		//
+		// t := tea.NewProgram(multiSelect.InitialModelMultiSelect(fetch, conTree, "Select File/Dir to download", &quitSelect))
+		// if _, err := t.Run(); err != nil {
+		// 	log.Fatal(err)
+		// }
+		//
+		// if fetch.Err != nil {
+		// 	log.Fatal(fetch.Err.Error())
+		// }
+		// if quitSelect || len(conTree.SelectedRepo) <= 0 {
+		// 	fmt.Println("\nNo option chosen 😊 Feel free to explore again!")
+		// 	os.Exit(0)
+		// }
+		//
+		// wg := sync.WaitGroup{}
+		//
+		// dt := tea.NewProgram(progress.InitialProgress(conTree.SelectedRepoLen()))
+		// wg.Add(1)
+		// go func() {
+		// 	defer wg.Done()
+		// 	if _, err := dt.Run(); err != nil {
+		// 		log.Fatal(err)
+		// 	}
+		// }()
+		//
+		// wg.Add(conTree.SelectedRepoLen())
+		// for filePath, choice := range conTree.SelectedRepo {
+		// 	go func(repos []git.TreeElement, repoPath string) {
+		// 		for _, repo := range repos {
+		// 			go func(repo git.TreeElement) {
+		// 				defer wg.Done()
+		// 				path := filepath.Join(rootPath, repoPath)
+		// 				err := client.DownloadFile(&repo, path)
+		// 				if err != nil {
+		// 					releaseErr := dt.ReleaseTerminal()
+		// 					if releaseErr != nil {
+		// 						log.Fatalf("Problem releasing terminal: %v", releaseErr)
+		// 					}
+		// 					log.Fatalf("Error while downloading %v", err)
+		// 				}
+		// 				dt.Send(progress.DownloadMes(repo.Path))
+		// 			}(repo)
+		// 		}
+		// 	}(choice, filePath)
+		// }
+		//
+		// wg.Wait()
+		// dt.Quit()
+		// err := dt.ReleaseTerminal()
+		// if err != nil {
+		// 	log.Fatalf("Could not release terminal: %v", err)
+		// }
 	},
 }
 
