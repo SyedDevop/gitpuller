@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"reflect"
 	"sync"
 	"time"
 
@@ -16,7 +17,7 @@ var LogPath = "network_test.log"
 
 func main() {
 	var reqTimes int
-	flag.IntVar(&reqTimes, "rt", 10, "How many times should the request be sent")
+	flag.IntVar(&reqTimes, "rt", 1, "How many times should the request be sent")
 	flag.Parse()
 
 	logF := mylog.LogFile(&LogPath)
@@ -34,7 +35,11 @@ func main() {
 			res := req()
 			if res.StatusCode == http.StatusOK {
 				logString := fmt.Sprintf("(%d):Request took: %0.3d ms\n", count, time.Since(start).Milliseconds())
+
 				fmt.Fprint(logF, logString)
+				resStrin := fmt.Sprintln("Response: ", res.Header.Get("Link"), " type ", reflect.TypeOf(res.Header.Get("Link")))
+				fmt.Println(resStrin)
+				fmt.Fprint(logF, resStrin)
 				tookChan <- time.Since(start)
 			} else {
 				return
@@ -54,7 +59,7 @@ func main() {
 }
 
 func req() *http.Response {
-	req, err := http.NewRequest("GET", "https://api.github.com/repos/SyedDevop/fiyat_list/git/trees/main", nil)
+	req, err := http.NewRequest("GET", "https://api.github.com/users/SyedDevop/repos?per_page=20&page=2", nil)
 	if err != nil {
 		log.Fatalln(err)
 	}
