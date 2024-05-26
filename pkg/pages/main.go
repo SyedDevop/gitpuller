@@ -3,6 +3,7 @@ package pages
 import (
 	"io"
 
+	userrepos "github.com/SyedDevop/gitpuller/pkg/pages/user-repos"
 	"github.com/SyedDevop/gitpuller/pkg/ui/common"
 	"github.com/SyedDevop/gitpuller/pkg/ui/footer"
 	"github.com/SyedDevop/gitpuller/pkg/ui/statusbar"
@@ -15,9 +16,12 @@ import (
 type Page interface {
 	Title() string
 	Render() string
-	SetSize(width, height int)
 	ShortHelp() []key.Binding
 	FullHelp() [][]key.Binding
+	Init() tea.Cmd
+	View() string
+	SetSize(width, height int)
+	Update(msg tea.Msg) (tea.Model, tea.Cmd)
 }
 
 type Model struct {
@@ -46,11 +50,15 @@ func NewPageModel(cmd *cobra.Command, fileLogger io.Writer) *Model {
 	c := common.NewCommon(ctx, fileLogger, output, 0, 0)
 
 	sb := statusbar.New(c)
+
+	r := userrepos.NewReposPage(c)
 	m := &Model{
 		common:      c,
 		currentPage: 0,
-		pages:       []Page{},
-		statusbar:   sb,
+		pages: []Page{
+			r,
+		},
+		statusbar: sb,
 	}
 
 	m.footer = footer.New(c, m)
@@ -68,7 +76,8 @@ func (m *Model) SetSize(w, h int) {
 
 	m.footer.SetSize(w-wm, h-hm)
 	m.statusbar.SetSize(w, h-hm)
-	// m.Model.SetSize(w-wm, h-hm)
+
+	m.pages[0].SetSize(w-wm, h-hm)
 }
 
 // ShortHelp implements help.KeyMap.
@@ -83,12 +92,12 @@ func (m Model) ShortHelp() []key.Binding {
 	default:
 
 		// FIX : Change to use current Page/panes help
-		return []key.Binding{
-			m.common.KeyMap.Back,
-			m.common.KeyMap.Quit,
-			m.common.KeyMap.Help,
-		}
-		// return m.model.ShortHelp()
+		// return []key.Binding{
+		// 	m.common.KeyMap.Back,
+		// 	m.common.KeyMap.Quit,
+		// 	m.common.KeyMap.Help,
+		// }
+		return m.pages[0].ShortHelp()
 	}
 }
 
@@ -107,21 +116,24 @@ func (m Model) FullHelp() [][]key.Binding {
 		}
 	default:
 		// FIX : Change to use current Page/panes help
-		return [][]key.Binding{
-			{
-				m.common.KeyMap.Back,
-			},
-			{
-				m.common.KeyMap.Quit,
-				m.common.KeyMap.Help,
-			},
-		}
-		// return m.model.FullHelp()
+		// return [][]key.Binding{
+		// 	{
+		// 		m.common.KeyMap.Back,
+		// 	},
+		// 	{
+		// 		m.common.KeyMap.Quit,
+		// 		m.common.KeyMap.Help,
+		// 	},
+		// }
+		return m.pages[0].FullHelp()
 	}
 }
 
 func (m *Model) Init() tea.Cmd {
-	return tea.Batch(m.footer.Init(), m.statusbar.Init())
+	// FIX : Change to use current Page/panes init
+	rePage := m.pages[0]
+	m.state = startState
+	return tea.Batch(m.footer.Init(), m.statusbar.Init(), rePage.Init())
 }
 
 func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
@@ -160,6 +172,13 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		cmds = append(cmds, cmd)
 	}
 
+	// FIX : Change to use current Page/panes
+	rePage, cmd := m.pages[0].Update(msg)
+	m.pages[0] = rePage.(Page)
+	if cmd != nil {
+		cmds = append(cmds, cmd)
+	}
+
 	s, cmd := m.statusbar.Update(msg)
 	m.statusbar = s.(*statusbar.Model)
 	if cmd != nil {
@@ -182,6 +201,9 @@ func (m *Model) View() string {
 	var view string
 	var statusbar string
 	switch m.state {
+	case startState:
+		// FIX : Change to use current Page/panes
+		view = m.pages[0].View()
 	case errorState:
 		err := m.common.Styles.ErrorTitle.Render("Bummer")
 		err += m.common.Styles.ErrorBody.Render(m.error.Error())
@@ -196,7 +218,6 @@ func (m *Model) View() string {
 	default:
 		statusbar = m.statusbar.View()
 	}
-	view += "Game"
 	if m.showFooter {
 		view = lipgloss.JoinVertical(lipgloss.Top, view, statusbar, m.footer.View())
 	}
