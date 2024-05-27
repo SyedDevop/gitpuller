@@ -1,4 +1,4 @@
-package git
+package gituser
 
 type (
 	ReposLink struct {
@@ -7,16 +7,20 @@ type (
 		CurrentPage                  int
 		PageCount                    int
 	}
-	ReposLinkIterator interface {
-		Next() ReposLink
+	Link struct {
+		Url string
+		Rel string
 	}
+	// ReposLinkIterator interface {
+	// 	Next() ReposLink
+	// }
 	GitUser struct {
 		ReposLink *ReposLink
 		Name      string
 	}
 )
 
-func NetwReposLink(firstUrl string) *ReposLinkIterator {
+func NetwReposLink(firstUrl string) *ReposLink {
 	repoLinlk := &ReposLink{
 		FirstLink:   firstUrl,
 		CurrentPage: 1,
@@ -26,5 +30,5 @@ func NetwReposLink(firstUrl string) *ReposLinkIterator {
 }
 
 func (r *ReposLink) Next() *ReposLink {
-	return r
+	panic("Implement me the next iterator for ReposLink")
 }
