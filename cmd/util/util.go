@@ -77,6 +77,6 @@ func GetGitToken() string {
 	return token
 }
 
-func time12(t time.Time) string {
+func Time12(t time.Time) string {
 	return t.Format("Monday, 02-Jan-06 03:04:05.000 PM MST")
 }
