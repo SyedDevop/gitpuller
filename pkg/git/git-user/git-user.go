@@ -1,11 +1,15 @@
 package gituser
 
+import (
+	"github.com/SyedDevop/gitpuller/cmd/util"
+	"github.com/SyedDevop/gitpuller/pkg/client"
+)
+
 type (
 	ReposLink struct {
-		NextLink, LastLink, PrevLink *string
-		FirstLink                    string
-		CurrentPage                  int
-		PageCount                    int
+		NextLink, LastLink, PrevLink, FirstLink *string
+		CurrentPage                             int
+		PageCount                               int
 	}
 	Link struct {
 		Url string
@@ -16,17 +20,55 @@ type (
 	// }
 	GitUser struct {
 		ReposLink *ReposLink
+		Client    *client.Client
 		Name      string
 	}
 )
 
-func NetwReposLink(firstUrl string) *ReposLink {
+func (u UserRepos) Title() string { return u.Name }
+func (u UserRepos) Description() string {
+	if u.Descript == nil {
+		return "No Description"
+	}
+	return *u.Descript
+}
+func (u UserRepos) FilterValue() string { return u.Name }
+
+func NewGitUser(name string) *GitUser {
+	c := client.NewClint()
+
+	c.AddHeader("Accept", "application/vnd.github+json")
+	c.AddHeader("X-GitHub-Api-Version", "2022-11-28")
+
+	gitToken := util.GetGitToken()
+	if gitToken != "" {
+		c.AddBareAuth(gitToken)
+	}
+
 	repoLinlk := &ReposLink{
-		FirstLink:   firstUrl,
 		CurrentPage: 1,
 		PageCount:   0,
 	}
-	return repoLinlk
+
+	return &GitUser{
+		ReposLink: repoLinlk,
+		Client:    c,
+		Name:      name,
+	}
+}
+
+func (g *GitUser) GetUsersRepos(url string) ([]UserRepos, error) {
+	res, err := g.Client.Get(url)
+	if err != nil {
+		return nil, err
+	}
+	defer res.Body.Close()
+	var userRepos []UserRepos
+	err = client.UnmarshalJSON(res, &userRepos)
+	if err != nil {
+		return nil, err
+	}
+	return userRepos, nil
 }
 
 func (r *ReposLink) Next() *ReposLink {

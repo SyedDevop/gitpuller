@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/SyedDevop/gitpuller/pkg/git"
+	gituser "github.com/SyedDevop/gitpuller/pkg/git/git-user"
 	"github.com/SyedDevop/gitpuller/pkg/ui/common"
 	"github.com/SyedDevop/gitpuller/pkg/ui/statusbar"
 	"github.com/charmbracelet/bubbles/key"
@@ -30,9 +32,10 @@ type Repos interface {
 }
 
 type UserReposPage struct {
-	repos     Repos
 	list      list.Model
+	repos     Repos
 	statusbar *statusbar.Model
+	git       *gituser.GitUser
 	common    common.Common
 	spinner   spinner.Model
 	cursor    int
@@ -42,7 +45,9 @@ type UserReposPage struct {
 func NewReposPage(com common.Common) *UserReposPage {
 	sd := statusbar.New(com)
 	s := spinner.New(spinner.WithSpinner(spinner.Dot), spinner.WithStyle(com.Styles.Spinner))
-	list := list.New(Items, list.NewDefaultDelegate(), com.Width, com.Height)
+	list := list.New([]list.Item{}, list.NewDefaultDelegate(), com.Width, com.Height)
+	git := gituser.NewGitUser("SyedDevop")
+
 	repos := &UserReposPage{
 		statusbar: sd,
 		common:    com,
@@ -50,17 +55,29 @@ func NewReposPage(com common.Common) *UserReposPage {
 		state:     loadingState,
 		repos:     nil,
 		list:      list,
+		git:       git,
 	}
 	repos.list.Title = "Repos From Syed"
 	repos.list.SetSize(com.Width, com.Height)
 	return repos
 }
 
+func (r *UserReposPage) getUserRepos(url string) tea.Cmd {
+	// repos
+	return func() tea.Msg {
+		repos, err := r.git.GetUsersRepos(git.GenerateReposURL(url))
+		if err != nil {
+			return err
+		}
+		return repos
+	}
+}
+
 func (r *UserReposPage) Init() tea.Cmd {
-	r.state = readyState
 	return tea.Batch(
 		r.statusbar.Init(),
 		r.spinner.Tick,
+		r.getUserRepos("SyedDevop"),
 	)
 }
 
@@ -68,6 +85,14 @@ func (r *UserReposPage) Init() tea.Cmd {
 func (r *UserReposPage) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	cmds := make([]tea.Cmd, 0)
 	switch msg := msg.(type) {
+	case []gituser.UserRepos:
+		items := make([]list.Item, len(msg))
+		for i, v := range msg {
+			items[i] = v
+		}
+		r.list.SetItems(items)
+		r.state = readyState
+
 	case spinner.TickMsg:
 		sp, cmd := r.spinner.Update(msg)
 		r.spinner = sp
@@ -102,6 +127,7 @@ func (r *UserReposPage) View() string {
 		Height(r.common.Height - hm)
 	mainStyle := r.common.Styles.Repo.Body.Copy().
 		Height(r.common.Height - hm)
+
 	var main string
 	var statusbar string
 	switch r.state {
@@ -111,12 +137,11 @@ func (r *UserReposPage) View() string {
 		main = r.list.View()
 		statusbar = r.statusbar.View()
 	}
-	_ = mainStyle.Render(main)
 
 	view := lipgloss.JoinVertical(lipgloss.Top,
 		r.headerView(),
 		// r.tabs.View(),
-		r.list.View(),
+		mainStyle.Render(main),
 		statusbar,
 	)
 	return s.Render(view)

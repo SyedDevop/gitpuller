@@ -21,5 +21,7 @@ tailnet:
 	tail -f network_test.log | bat --paging=never --file-name=log
 taildeb:
 	tail -f debug.log | bat --paging=never --file-name=log
+tailtea:
+	tail -f tea.log | bat --paging=never --file-name=log
 build:
 	@go build  -o ./bin/

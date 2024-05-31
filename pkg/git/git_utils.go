@@ -18,7 +18,7 @@ import (
 // Returns:
 //   - A formatted URL string to access the user's repositories on GitHub.
 func GenerateReposURL(name string) string {
-	return fmt.Sprintf("https://api.github.com/user/%s/repos", strings.TrimSpace(name))
+	return fmt.Sprintf("https://api.github.com/users/%s/repos", strings.TrimSpace(name))
 }
 
 // AddPaginationParams adds pagination parameters to a given URL.

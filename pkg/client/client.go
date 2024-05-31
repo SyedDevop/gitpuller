@@ -8,14 +8,12 @@ import (
 
 type Client struct {
 	HTTPClient *http.Client
-	BaseURL    string
 	Header     http.Header
 }
 
 func NewClint() *Client {
 	return &Client{
 		HTTPClient: &http.Client{},
-		BaseURL:    "",
 		Header:     http.Header{},
 	}
 }
@@ -52,12 +50,17 @@ func (c *Client) AddBareAuth(auth string) *Client {
 	return c
 }
 
-func (c *Client) UnmarshalJSON(res *http.Response, data interface{}) error {
+func UnmarshalJSON(res *http.Response, data interface{}) error {
 	body, err := io.ReadAll(res.Body)
 	if err != nil {
 		return err
 	}
-	return json.Unmarshal(body, data)
+
+	err = json.Unmarshal(body, data)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 func (c *Client) Get(url string) (*http.Response, error) {
