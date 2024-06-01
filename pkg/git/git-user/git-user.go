@@ -2,16 +2,22 @@ package gituser
 
 import (
 	"github.com/SyedDevop/gitpuller/cmd/util"
+	"github.com/SyedDevop/gitpuller/pkg/assert"
 	"github.com/SyedDevop/gitpuller/pkg/client"
 )
 
 type (
-	ReposLink struct {
-		NextLink, LastLink, PrevLink, FirstLink *string
-		CurrentPage                             int
-		PageCount                               int
-		Client                                  *client.Client
+	Repos struct {
+		NextLink    *string
+		LastLink    *string
+		PrevLink    *string
+		FirstLink   *string
+		Client      *client.Client
+		CurrentPage int
+		PageCount   int
+		ItraterDone bool
 	}
+
 	Link struct {
 		Url string
 		Rel string
@@ -20,7 +26,7 @@ type (
 	// 	Next() ReposLink
 	// }
 	GitUser struct {
-		ReposLink *ReposLink
+		ReposLink *Repos
 		Client    *client.Client
 		Name      string
 	}
@@ -46,10 +52,11 @@ func NewGitUser(name string) *GitUser {
 		c.AddBareAuth(gitToken)
 	}
 
-	repoLinlk := &ReposLink{
+	repoLinlk := &Repos{
 		CurrentPage: 1,
 		PageCount:   0,
 		Client:      c,
+		ItraterDone: false,
 	}
 
 	return &GitUser{
@@ -73,10 +80,49 @@ func (g *GitUser) GetUsersRepos(url string) ([]UserRepos, error) {
 	return userRepos, nil
 }
 
-func (r *ReposLink) Next() *ReposLink {
-	res, err := r.Client.Get(url)
+func (r *Repos) SetNextLink(url string) {
+	r.NextLink = &url
+}
+
+func (r *Repos) Reset() {
+	r.ItraterDone = false
+	r.NextLink = r.FirstLink
+	r.FirstLink = nil
+	r.PrevLink = nil
+	r.LastLink = nil
+}
+
+func (r *Repos) Next() ([]UserRepos, error) {
+	assert.Assert(r.NextLink != nil, "The next url link for UserRepos is nil")
+	if r.ItraterDone {
+		return nil, nil
+	}
+	res, err := r.Client.Get(*r.NextLink)
 	if err != nil {
 		return nil, err
 	}
 	defer res.Body.Close()
+
+	links := ParseLinkHeader(res.Header.Get("Link"))
+	for _, link := range links {
+		switch link.Rel {
+		case "next":
+			r.NextLink = &link.Url
+		case "last":
+			r.ItraterDone = true
+			r.LastLink = &link.Url
+		case "first":
+			r.ItraterDone = true
+			r.FirstLink = &link.Url
+		case "prev":
+			r.PrevLink = &link.Url
+		}
+	}
+
+	var userRepos []UserRepos
+	err = client.UnmarshalJSON(res, &userRepos)
+	if err != nil {
+		return nil, err
+	}
+	return userRepos, nil
 }
