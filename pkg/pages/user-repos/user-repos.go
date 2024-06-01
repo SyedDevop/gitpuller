@@ -138,9 +138,15 @@ func (r *UserReposPage) View() string {
 		statusbar = r.statusbar.View()
 	}
 
+	// wordSty := r.common.Renderer.NewStyle().MaxWidth(r.common.Width)
+	// word := ""
+	// if r.list.FilterState() == list.Filtering {
+	// 	word = fmt.Sprintf("Currently showing %d results", len(r.list.VisibleItems()))
+	// }
+
 	view := lipgloss.JoinVertical(lipgloss.Top,
 		r.headerView(),
-		// r.tabs.View(),
+		// word,
 		mainStyle.Render(main),
 		statusbar,
 	)

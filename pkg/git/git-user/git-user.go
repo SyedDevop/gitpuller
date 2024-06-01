@@ -10,6 +10,7 @@ type (
 		NextLink, LastLink, PrevLink, FirstLink *string
 		CurrentPage                             int
 		PageCount                               int
+		Client                                  *client.Client
 	}
 	Link struct {
 		Url string
@@ -48,6 +49,7 @@ func NewGitUser(name string) *GitUser {
 	repoLinlk := &ReposLink{
 		CurrentPage: 1,
 		PageCount:   0,
+		Client:      c,
 	}
 
 	return &GitUser{
@@ -72,5 +74,9 @@ func (g *GitUser) GetUsersRepos(url string) ([]UserRepos, error) {
 }
 
 func (r *ReposLink) Next() *ReposLink {
-	panic("Implement me the next iterator for ReposLink")
+	res, err := r.Client.Get(url)
+	if err != nil {
+		return nil, err
+	}
+	defer res.Body.Close()
 }
