@@ -4,10 +4,9 @@ Copyright © 2024 Syed Uzair Ahmed <syeds.devops007@gmail.com>
 package cmd
 
 import (
-	"log"
-
 	"github.com/SyedDevop/gitpuller/pkg/pages"
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/log"
 	"github.com/spf13/cobra"
 )
 

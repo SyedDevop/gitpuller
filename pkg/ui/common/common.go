@@ -5,7 +5,6 @@ package common
 // - highlight: ("github.com/alecthomas/chroma/v2/lexers")
 import (
 	"context"
-	"fmt"
 	"io"
 
 	"github.com/SyedDevop/gitpuller/pkg/ui/keymap"
@@ -28,7 +27,6 @@ var (
 // Common is a struct all components should embed.
 type Common struct {
 	ctx          context.Context
-	FileLogger   io.Writer
 	Styles       *styles.Styles
 	KeyMap       *keymap.KeyMap
 	Renderer     *lipgloss.Renderer
@@ -46,22 +44,22 @@ func NewCommon(ctx context.Context, fileLogger io.Writer, out *lipgloss.Renderer
 	}
 	logger := log.FromContext(ctx).WithPrefix("ui")
 	logger.SetOutput(fileLogger)
+	logger.SetLevel(log.DebugLevel)
 	return Common{
-		ctx:        ctx,
-		Width:      width,
-		Height:     height,
-		Renderer:   out,
-		Output:     out.Output(),
-		Styles:     styles.DefaultStyles(out),
-		KeyMap:     keymap.DefaultKeyMap(),
-		Logger:     logger,
-		FileLogger: fileLogger,
+		ctx:      ctx,
+		Width:    width,
+		Height:   height,
+		Renderer: out,
+		Output:   out.Output(),
+		Styles:   styles.DefaultStyles(out),
+		KeyMap:   keymap.DefaultKeyMap(),
+		Logger:   logger,
 	}
 }
 
-func (c *Common) Log(a ...any) {
-	fmt.Fprint(c.FileLogger, &a)
-}
+// func (c *Common) Log(a ...any) {
+// 	fmt.Fprint(c.FileLogger, &a)
+// }
 
 // SetValue sets a value in the context.
 func (c *Common) SetValue(key, value interface{}) {

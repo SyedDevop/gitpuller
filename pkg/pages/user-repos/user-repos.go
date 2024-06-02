@@ -46,7 +46,18 @@ func NewReposPage(com common.Common) *UserReposPage {
 	sd := statusbar.New(com)
 	s := spinner.New(spinner.WithSpinner(spinner.Dot), spinner.WithStyle(com.Styles.Spinner))
 	list := list.New([]list.Item{}, list.NewDefaultDelegate(), com.Width, com.Height)
-	git := gituser.NewGitUser("SyedDevop")
+	list.SetShowHelp(false)
+
+	g := gituser.NewGitUser("SyedDevop")
+	per := 20
+	page := 1
+
+	// FIX: change to be authenticated of user based ReposLink
+	// - [] if there is a user Name
+	// - [] else if there is a authenticated user
+	// - [] else if there is a default user
+	// - [] else Panic and say any one of the option needs to be provided,
+	g.Repos.SetNextLink(git.AddPaginationParams(git.AuthReposURL(), &per, &page))
 
 	repos := &UserReposPage{
 		statusbar: sd,
@@ -55,17 +66,17 @@ func NewReposPage(com common.Common) *UserReposPage {
 		state:     loadingState,
 		repos:     nil,
 		list:      list,
-		git:       git,
+		git:       g,
 	}
 	repos.list.Title = "Repos From Syed"
 	repos.list.SetSize(com.Width, com.Height)
 	return repos
 }
 
-func (r *UserReposPage) getUserRepos(url string) tea.Cmd {
+func (r *UserReposPage) getUserRepos() tea.Cmd {
 	// repos
 	return func() tea.Msg {
-		repos, err := r.git.GetUsersRepos(git.GenerateReposURL(url))
+		repos, err := r.git.Repos.Next()
 		if err != nil {
 			return err
 		}
@@ -77,7 +88,7 @@ func (r *UserReposPage) Init() tea.Cmd {
 	return tea.Batch(
 		r.statusbar.Init(),
 		r.spinner.Tick,
-		r.getUserRepos("SyedDevop"),
+		r.getUserRepos(),
 	)
 }
 
@@ -86,11 +97,14 @@ func (r *UserReposPage) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	cmds := make([]tea.Cmd, 0)
 	switch msg := msg.(type) {
 	case []gituser.UserRepos:
-		items := make([]list.Item, len(msg))
+		r.common.Logger.Debugf("Got Msg from :%T\n and the len: %d is ", msg, len(msg))
+		priviesItems := r.list.Items()
+		newItems := make([]list.Item, len(msg))
 		for i, v := range msg {
-			items[i] = v
+			newItems[i] = v
 		}
-		r.list.SetItems(items)
+		priviesItems = append(priviesItems, newItems...)
+		r.list.SetItems(priviesItems)
 		r.state = readyState
 
 	case spinner.TickMsg:
@@ -107,6 +121,14 @@ func (r *UserReposPage) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	r.list = l
 	if cmd != nil {
 		cmds = append(cmds, cmd)
+	}
+
+	if l.SettingFilter() && r.state != loadingState {
+		if len(l.VisibleItems()) == 0 {
+			r.state = loadingState
+			r.list.ResetFilter()
+			return r, r.getUserRepos()
+		}
 	}
 
 	s, cmd := r.statusbar.Update(msg)

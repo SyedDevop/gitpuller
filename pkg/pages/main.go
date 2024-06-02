@@ -137,7 +137,7 @@ func (m *Model) Init() tea.Cmd {
 }
 
 func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
-	m.common.Logger.Debugf("mgs received: %T", msg)
+	// m.common.Logger.Debugf("mgs received: %T", msg)
 	cmds := make([]tea.Cmd, 0)
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
