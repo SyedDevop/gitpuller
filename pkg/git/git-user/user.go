@@ -1,6 +1,9 @@
 package gituser
 
-import "fmt"
+import (
+	"fmt"
+	"time"
+)
 
 type DefaultBranch string
 
@@ -33,6 +36,9 @@ type UserRepos struct {
 	ContentsURL     string        `json:"contents_url"`
 	DownloadsURL    string        `json:"downloads_url"`
 	LabelsURL       string        `json:"labels_url"`
+	CreatedAt       time.Time     `json:"created_at"`
+	UpdatedAt       time.Time     `json:"updated_at"`
+	PushedAt        time.Time     `json:"pushed_at"`
 	GitURL          string        `json:"git_url"`
 	Name            string        `json:"name"`
 	CloneURL        string        `json:"clone_url"`
@@ -65,6 +71,17 @@ type Owner struct {
 	ID         int64  `json:"id"`
 	SiteAdmin  bool   `json:"site_admin"`
 }
+
+func (u UserRepos) Command() string { return "git clone " + u.CloneURL }
+func (u UserRepos) IsPrivate() bool { return u.Private }
+func (u UserRepos) Title() string   { return u.Name }
+func (u UserRepos) Description() string {
+	if u.Descript == nil {
+		return "No Description"
+	}
+	return *u.Descript
+}
+func (u UserRepos) FilterValue() string { return u.Name }
 
 func (u UserRepos) String() string {
 	dis := ""

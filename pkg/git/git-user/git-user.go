@@ -34,7 +34,9 @@ type (
 	}
 )
 
-func (u UserRepos) Title() string { return u.Name }
+func (u UserRepos) Command() string { return "git clone " + u.CloneURL }
+func (u UserRepos) IsPrivate() bool { return u.Private }
+func (u UserRepos) Title() string   { return u.Name }
 func (u UserRepos) Description() string {
 	if u.Descript == nil {
 		return "No Description"

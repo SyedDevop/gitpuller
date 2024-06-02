@@ -1,37 +1,141 @@
 package userrepos
 
-import "github.com/charmbracelet/bubbles/list"
+import (
+	"fmt"
+	"io"
+	"strings"
 
-type item struct {
-	title, desc string
+	gituser "github.com/SyedDevop/gitpuller/pkg/git/git-user"
+	"github.com/SyedDevop/gitpuller/pkg/ui/common"
+	"github.com/charmbracelet/bubbles/key"
+	"github.com/charmbracelet/bubbles/list"
+	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
+	"github.com/dustin/go-humanize"
+	"github.com/muesli/reflow/truncate"
+)
+
+type ItemDelegate struct {
+	common    *common.Common
+	copiedIdx int
 }
 
-func (i item) Title() string       { return i.title }
-func (i item) Description() string { return i.desc }
-func (i item) FilterValue() string { return i.title }
+// NewItemDelegate creates a new ItemDelegate.
+func NewItemDelegate(common *common.Common) *ItemDelegate {
+	return &ItemDelegate{
+		common:    common,
+		copiedIdx: -1,
+	}
+}
 
-var Items = []list.Item{
-	item{title: "Raspberry Pi’s", desc: "I have ’em all over my house"},
-	item{title: "Nutella", desc: "It's good on toast"},
-	item{title: "Bitter melon", desc: "It cools you down"},
-	item{title: "Nice socks", desc: "And by that I mean socks without holes"},
-	item{title: "Eight hours of sleep", desc: "I had this once"},
-	item{title: "Cats", desc: "Usually"},
-	item{title: "Plantasia, the album", desc: "My plants love it too"},
-	item{title: "Pour over coffee", desc: "It takes forever to make though"},
-	item{title: "VR", desc: "Virtual reality...what is there to say?"},
-	item{title: "Noguchi Lamps", desc: "Such pleasing organic forms"},
-	item{title: "Linux", desc: "Pretty much the best OS"},
-	item{title: "Business school", desc: "Just kidding"},
-	item{title: "Pottery", desc: "Wet clay is a great feeling"},
-	item{title: "Shampoo", desc: "Nothing like clean hair"},
-	item{title: "Table tennis", desc: "It’s surprisingly exhausting"},
-	item{title: "Milk crates", desc: "Great for packing in your extra stuff"},
-	item{title: "Afternoon tea", desc: "Especially the tea sandwich part"},
-	item{title: "Stickers", desc: "The thicker the vinyl the better"},
-	item{title: "20° Weather", desc: "Celsius, not Fahrenheit"},
-	item{title: "Warm light", desc: "Like around 2700 Kelvin"},
-	item{title: "The vernal equinox", desc: "The autumnal equinox is pretty good too"},
-	item{title: "Gaffer’s tape", desc: "Basically sticky fabric"},
-	item{title: "Terrycloth", desc: "In other words, towel fabric"},
+// Width returns the item width.
+func (d ItemDelegate) Width() int {
+	width := d.common.Styles.MenuItem.GetHorizontalFrameSize() + d.common.Styles.MenuItem.GetWidth()
+	return width
+}
+
+// Height returns the item height. Implements list.ItemDelegate.
+func (d *ItemDelegate) Height() int {
+	height := d.common.Styles.MenuItem.GetVerticalFrameSize() + d.common.Styles.MenuItem.GetHeight()
+	return height
+}
+
+// Spacing returns the spacing between items. Implements list.ItemDelegate.
+func (d *ItemDelegate) Spacing() int { return 1 }
+
+// Update implements list.ItemDelegate.
+func (d *ItemDelegate) Update(msg tea.Msg, m *list.Model) tea.Cmd {
+	idx := m.Index()
+	item, ok := m.SelectedItem().(gituser.UserRepos)
+	if !ok {
+		return nil
+	}
+	switch msg := msg.(type) {
+	case tea.KeyMsg:
+		switch {
+		case key.Matches(msg, d.common.KeyMap.Copy):
+			d.copiedIdx = idx
+			d.common.Output.Copy(item.Command())
+			return m.SetItem(idx, item)
+		}
+	}
+	return nil
+}
+
+func TruncateString(s string, max int) string {
+	if max < 0 {
+		max = 0
+	}
+	return truncate.StringWithTail(s, uint(max), "…")
+}
+
+// Render implements list.ItemDelegate.
+func (d *ItemDelegate) Render(w io.Writer, m list.Model, index int, listItem list.Item) {
+	i := listItem.(gituser.UserRepos)
+	s := strings.Builder{}
+	var matchedRunes []int
+
+	// Conditions
+	var (
+		isSelected = index == m.Index()
+		isFiltered = m.FilterState() == list.Filtering || m.FilterState() == list.FilterApplied
+	)
+
+	styles := d.common.Styles.RepoSelector.Normal
+	if isSelected {
+		styles = d.common.Styles.RepoSelector.Active
+	}
+
+	title := i.Title()
+	title = TruncateString(title, m.Width()-styles.Base.GetHorizontalFrameSize())
+	if i.IsPrivate() {
+		title += " 🔒"
+	}
+	if isSelected {
+		title += " "
+	}
+	var updatedStr string
+	updatedStr = fmt.Sprintf(" Updated %s", humanize.Time(i.UpdatedAt))
+
+	if m.Width()-styles.Base.GetHorizontalFrameSize()-lipgloss.Width(updatedStr)-lipgloss.Width(title) <= 0 {
+		updatedStr = ""
+	}
+	updatedStyle := styles.Updated.Copy().
+		Align(lipgloss.Right).
+		Width(m.Width() - styles.Base.GetHorizontalFrameSize() - lipgloss.Width(title))
+	updated := updatedStyle.Render(updatedStr)
+
+	if isFiltered && index < len(m.VisibleItems()) {
+		// Get indices of matched characters
+		matchedRunes = m.MatchesForItem(index)
+	}
+
+	if isFiltered {
+		unmatched := styles.Title.Copy().Inline(true)
+		matched := unmatched.Copy().Underline(true)
+		title = lipgloss.StyleRunes(title, matchedRunes, matched, unmatched)
+	}
+	title = styles.Title.Render(title)
+	desc := i.Description()
+	desc = TruncateString(desc, m.Width()-styles.Base.GetHorizontalFrameSize())
+	desc = styles.Desc.Render(desc)
+
+	s.WriteString(lipgloss.JoinHorizontal(lipgloss.Bottom, title, updated))
+	s.WriteRune('\n')
+	s.WriteString(desc)
+	s.WriteRune('\n')
+
+	cmd := i.Command()
+	cmdStyler := styles.Command.Render
+	if d.copiedIdx == index {
+		cmd = "(copied to clipboard)"
+		cmdStyler = styles.Desc.Render
+		// d.copiedIdx = -1
+	}
+	cmd = TruncateString(cmd, m.Width()-styles.Base.GetHorizontalFrameSize())
+	s.WriteString(cmdStyler(cmd))
+	fmt.Fprint(w,
+		// d.common.Zone.Mark(i.ID(),
+		styles.Base.Render(s.String()),
+	)
 }
