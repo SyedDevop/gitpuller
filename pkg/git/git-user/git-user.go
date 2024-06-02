@@ -28,9 +28,10 @@ type (
 	// 	Next() ReposLink
 	// }
 	GitUser struct {
-		Repos  *Repos
-		Client *client.Client
-		Name   string
+		Repos    *Repos
+		Client   *client.Client
+		UserName string
+		UserUrl  string
 	}
 )
 
@@ -53,10 +54,18 @@ func NewGitUser(name string) *GitUser {
 	}
 
 	return &GitUser{
-		Repos:  repos,
-		Client: c,
-		Name:   name,
+		Repos:    repos,
+		Client:   c,
+		UserName: name,
+		UserUrl:  "",
 	}
+}
+
+func (g *GitUser) SetUserUrl(url string) { g.UserUrl = url }
+func (g *GitUser) ProjectName() string   { return g.UserName }
+func (g *GitUser) Name() string          { return g.UserName }
+func (g *GitUser) Description() string {
+	return "This is the Repositories of " + g.UserUrl + ""
 }
 
 func (g *GitUser) GetUsersRepos(url string) ([]UserRepos, error) {

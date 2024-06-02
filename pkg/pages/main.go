@@ -21,6 +21,10 @@ type Page interface {
 	View() string
 	SetSize(width, height int)
 	Update(msg tea.Msg) (tea.Model, tea.Cmd)
+
+	// ProjectName() string
+	// Name() string
+	// Description() string
 }
 
 type Model struct {

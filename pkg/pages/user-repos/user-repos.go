@@ -25,15 +25,8 @@ const (
 	readyState
 )
 
-type Repos interface {
-	ProjectName() string
-	Name() string
-	Description() string
-}
-
 type UserReposPage struct {
 	list      list.Model
-	repos     Repos
 	statusbar *statusbar.Model
 	git       *gituser.GitUser
 	common    common.Common
@@ -48,6 +41,7 @@ func NewReposPage(com common.Common) *UserReposPage {
 	list := list.New([]list.Item{}, NewItemDelegate(&com), com.Width, com.Height)
 	list.SetShowStatusBar(false)
 	list.SetShowHelp(false)
+	list.SetShowTitle(false)
 
 	g := gituser.NewGitUser("SyedDevop")
 	per := 20
@@ -65,11 +59,9 @@ func NewReposPage(com common.Common) *UserReposPage {
 		common:    com,
 		spinner:   s,
 		state:     loadingState,
-		repos:     nil,
 		list:      list,
 		git:       g,
 	}
-	repos.list.Title = "Repos From Syed"
 	repos.list.SetSize(com.Width, com.Height)
 	return repos
 }
@@ -99,6 +91,9 @@ func (r *UserReposPage) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case []gituser.UserRepos:
 		r.common.Logger.Debugf("Got Msg from :%T\n and the len: %d is ", msg, len(msg))
+		if len(msg) > 0 {
+			r.git.SetUserUrl(msg[0].Owner.HTMLURL)
+		}
 		priviesItems := r.list.Items()
 		newItems := make([]list.Item, len(msg))
 		for i, v := range msg {
@@ -177,16 +172,13 @@ func (r *UserReposPage) View() string {
 }
 
 func (r *UserReposPage) headerView() string {
-	if r.repos == nil {
-		return "No Repositories"
-	}
 	truncate := r.common.Renderer.NewStyle().MaxWidth(r.common.Width)
-	header := r.repos.ProjectName()
+	header := r.git.ProjectName()
 	if header == "" {
-		header = r.repos.Name()
+		header = r.git.Name()
 	}
 	header = r.common.Styles.Repo.HeaderName.Render(header)
-	desc := strings.TrimSpace(r.repos.Description())
+	desc := strings.TrimSpace(r.git.Description())
 	if desc != "" {
 		header = lipgloss.JoinVertical(lipgloss.Top,
 			header,
