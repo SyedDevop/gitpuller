@@ -5,8 +5,7 @@ import (
 	"strings"
 )
 
-// GenerateReposURL generates a GitHub API URL to fetch repositories for a given user.
-// It takes a user's name as input, trims any leading or trailing whitespace, and
+// UserReposURL generates a GitHub API URL to fetch repositories for a given user.
 // returns the formatted URL as a string.
 //
 // Parameters:
@@ -14,8 +13,17 @@ import (
 //
 // Returns:
 //   - A formatted URL string to access the user's repositories on GitHub.
-func GenerateReposURL(name string) string {
+func UserReposURL(name string) string {
 	return fmt.Sprintf("https://api.github.com/users/%s/repos", strings.TrimSpace(name))
+}
+
+// AuthReposURL generates a GitHub API URL to fetch repositories for Authenticated user.
+// returns the formatted URL as a string.
+//
+// Returns:
+//   - A formatted URL string to access the Authenticated user's repositories on GitHub.
+func AuthReposURL() string {
+	return "https://api.github.com/user/repos"
 }
 
 // AddPaginationParams adds pagination parameters to a given URL.
@@ -41,5 +49,5 @@ func AddPaginationParams(url string, per, pages *int) string {
 		pages = &defaultPages
 	}
 
-	return fmt.Sprintf("%s?per_page=%d&pages=%d", url, *per, *pages)
+	return fmt.Sprintf("%s?per_page=%d&page=%d", url, *per, *pages)
 }
