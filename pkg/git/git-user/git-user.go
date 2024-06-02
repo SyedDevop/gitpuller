@@ -1,6 +1,8 @@
 package gituser
 
 import (
+	"fmt"
+
 	"github.com/SyedDevop/gitpuller/cmd/util"
 	"github.com/SyedDevop/gitpuller/pkg/assert"
 	"github.com/SyedDevop/gitpuller/pkg/client"
@@ -26,9 +28,9 @@ type (
 	// 	Next() ReposLink
 	// }
 	GitUser struct {
-		ReposLink *Repos
-		Client    *client.Client
-		Name      string
+		Repos  *Repos
+		Client *client.Client
+		Name   string
 	}
 )
 
@@ -52,7 +54,7 @@ func NewGitUser(name string) *GitUser {
 		c.AddBareAuth(gitToken)
 	}
 
-	repoLinlk := &Repos{
+	repos := &Repos{
 		CurrentPage: 1,
 		PageCount:   0,
 		Client:      c,
@@ -60,9 +62,9 @@ func NewGitUser(name string) *GitUser {
 	}
 
 	return &GitUser{
-		ReposLink: repoLinlk,
-		Client:    c,
-		Name:      name,
+		Repos:  repos,
+		Client: c,
+		Name:   name,
 	}
 }
 
@@ -92,6 +94,29 @@ func (r *Repos) Reset() {
 	r.LastLink = nil
 }
 
+func (r *Repos) String() string {
+	n, f, p, l := "Empty no Url", "Empty no Url", "Empty no Url", "Empty no Url"
+
+	if r.FirstLink != nil {
+		f = *r.FirstLink
+	}
+	if r.NextLink != nil {
+		n = *r.NextLink
+	}
+	if r.PrevLink != nil {
+		p = *r.PrevLink
+	}
+	if r.LastLink != nil {
+		l = *r.LastLink
+	}
+
+	return fmt.Sprintf(`
+Next Link: %s,
+Prev Link: %s,
+First Link: %s,
+Last Link: %s`, n, p, f, l)
+}
+
 func (r *Repos) Next() ([]UserRepos, error) {
 	assert.Assert(r.NextLink != nil, "The next url link for UserRepos is nil")
 	if r.ItraterDone {
@@ -104,17 +129,23 @@ func (r *Repos) Next() ([]UserRepos, error) {
 	defer res.Body.Close()
 
 	links := ParseLinkHeader(res.Header.Get("Link"))
+	linksLen := len(links)
+
 	for _, link := range links {
 		switch link.Rel {
 		case "next":
 			r.NextLink = &link.Url
 		case "last":
-			r.ItraterDone = true
 			r.LastLink = &link.Url
 		case "first":
-			r.ItraterDone = true
+			if linksLen == 2 {
+				r.ItraterDone = true
+			}
 			r.FirstLink = &link.Url
 		case "prev":
+			if linksLen == 2 {
+				r.ItraterDone = true
+			}
 			r.PrevLink = &link.Url
 		}
 	}

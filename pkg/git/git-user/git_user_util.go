@@ -13,8 +13,9 @@ func ParseLinkHeader(rawLink string) []*Link {
 	}
 
 	links := strings.Split(rawLink, ",")
-	assert.Assert(len(links) == 2, "GitUser#ParseLinkHeader expected the link to have two links only go(", len(links), ")\n")
-	linkList := make([]*Link, 2)
+	linkLenAssert := len(links) >= 2 && len(links) <= 4
+	assert.Assert(linkLenAssert, "GitUser#ParseLinkHeader expected the link to have two or four links only got::", len(links), "\n\nRaw Link::", rawLink, "\n\nSplit Link::", links, "\n")
+	linkList := make([]*Link, len(links))
 	for i, link := range links {
 		data := strings.Split(link, ">;")
 		assert.Assert(len(data) == 2, "GitUser#ParseLinkHeader::Url and Rel to be got(", data[0], data[1], ")\n")
