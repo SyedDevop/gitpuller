@@ -34,17 +34,6 @@ type (
 	}
 )
 
-func (u UserRepos) Command() string { return "git clone " + u.CloneURL }
-func (u UserRepos) IsPrivate() bool { return u.Private }
-func (u UserRepos) Title() string   { return u.Name }
-func (u UserRepos) Description() string {
-	if u.Descript == nil {
-		return "No Description"
-	}
-	return *u.Descript
-}
-func (u UserRepos) FilterValue() string { return u.Name }
-
 func NewGitUser(name string) *GitUser {
 	c := client.NewClint()
 
