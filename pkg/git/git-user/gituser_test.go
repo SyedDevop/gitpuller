@@ -32,12 +32,12 @@ func TestGetUserNext(t *testing.T) {
 
 	per := 5
 	page := 1
-	gituser.ReposLink.SetNextLink(git.AddPaginationParams(git.UserReposURL("SyedDevop"), &per, &page))
+	gituser.Repos.SetNextLink(git.AddPaginationParams(git.UserReposURL("SyedDevop"), &per, &page))
 
 	count := 0
 OUTER:
 	for {
-		val, err := gituser.ReposLink.Next()
+		val, err := gituser.Repos.Next()
 		require.NoError(t, err)
 		if val == nil {
 			break OUTER

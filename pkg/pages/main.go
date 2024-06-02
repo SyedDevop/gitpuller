@@ -6,7 +6,6 @@ import (
 	userrepos "github.com/SyedDevop/gitpuller/pkg/pages/user-repos"
 	"github.com/SyedDevop/gitpuller/pkg/ui/common"
 	"github.com/SyedDevop/gitpuller/pkg/ui/footer"
-	"github.com/SyedDevop/gitpuller/pkg/ui/statusbar"
 	"github.com/charmbracelet/bubbles/key"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
@@ -26,7 +25,6 @@ type Page interface {
 
 type Model struct {
 	error       error
-	statusbar   *statusbar.Model
 	footer      *footer.Footer
 	pages       []Page
 	common      common.Common
@@ -49,8 +47,6 @@ func NewPageModel(cmd *cobra.Command, fileLogger io.Writer) *Model {
 	ctx := cmd.Context()
 	c := common.NewCommon(ctx, fileLogger, output, 0, 0)
 
-	sb := statusbar.New(c)
-
 	r := userrepos.NewReposPage(c)
 	m := &Model{
 		common:      c,
@@ -58,7 +54,6 @@ func NewPageModel(cmd *cobra.Command, fileLogger io.Writer) *Model {
 		pages: []Page{
 			r,
 		},
-		statusbar: sb,
 	}
 
 	m.footer = footer.New(c, m)
@@ -75,8 +70,6 @@ func (m *Model) SetSize(w, h int) {
 	}
 
 	m.footer.SetSize(w-wm, h-hm)
-	m.statusbar.SetSize(w, h-hm)
-
 	m.pages[0].SetSize(w-wm, h-hm)
 }
 
@@ -133,7 +126,7 @@ func (m *Model) Init() tea.Cmd {
 	// FIX : Change to use current Page/panes init
 	rePage := m.pages[0]
 	m.state = startState
-	return tea.Batch(m.footer.Init(), m.statusbar.Init(), rePage.Init())
+	return tea.Batch(m.footer.Init(), rePage.Init())
 }
 
 func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
@@ -174,16 +167,11 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	// FIX : Change to use current Page/panes
 	rePage, cmd := m.pages[0].Update(msg)
-	m.pages[0] = rePage.(Page)
+	m.pages[0] = rePage.(*userrepos.UserReposPage)
 	if cmd != nil {
 		cmds = append(cmds, cmd)
 	}
 
-	s, cmd := m.statusbar.Update(msg)
-	m.statusbar = s.(*statusbar.Model)
-	if cmd != nil {
-		cmds = append(cmds, cmd)
-	}
 	// This fixes determining the height margin of the footer.
 	m.SetSize(m.common.Width, m.common.Height)
 
@@ -199,7 +187,6 @@ func (m *Model) View() string {
 	}
 
 	var view string
-	var statusbar string
 	switch m.state {
 	case startState:
 		// FIX : Change to use current Page/panes
@@ -215,13 +202,11 @@ func (m *Model) View() string {
 				hm -
 				m.common.Styles.Error.GetVerticalFrameSize()).
 			Render(err)
-	default:
-		statusbar = m.statusbar.View()
 	}
 	if m.showFooter {
-		view = lipgloss.JoinVertical(lipgloss.Top, view, statusbar, m.footer.View())
+		view = lipgloss.JoinVertical(lipgloss.Top, view, m.footer.View())
 	}
 
-	view = lipgloss.JoinVertical(lipgloss.Top, view, statusbar)
+	view = lipgloss.JoinVertical(lipgloss.Top, view)
 	return myStyle.Render(view)
 }
