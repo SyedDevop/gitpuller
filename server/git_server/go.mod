@@ -9,9 +9,13 @@ require (
 	github.com/mattn/go-sqlite3 v1.14.22
 )
 
+require github.com/ajg/form v1.5.1 // indirect
+
 require (
 	github.com/aymanbagabas/go-osc52/v2 v2.0.1 // indirect
 	github.com/charmbracelet/lipgloss v0.10.0 // indirect
+	github.com/go-chi/docgen v1.2.0
+	github.com/go-chi/render v1.0.3
 	github.com/go-logfmt/logfmt v0.6.0 // indirect
 	github.com/lucasb-eyer/go-colorful v1.2.0 // indirect
 	github.com/mattn/go-isatty v0.0.18 // indirect
