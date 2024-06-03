@@ -128,6 +128,12 @@ func (r *Repos) Next() ([]UserRepos, error) {
 	}
 	defer res.Body.Close()
 
+	if res.StatusCode != 200 {
+		body := make([]byte, 1024)
+		res.Body.Read(body)
+		return nil, fmt.Errorf("failed to get repos %s", string(body))
+	}
+
 	links := ParseLinkHeader(res.Header.Get("Link"))
 	linksLen := len(links)
 
