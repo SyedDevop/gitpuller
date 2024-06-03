@@ -2,20 +2,18 @@ package server
 
 import (
 	"fmt"
+	"git_server/internal/database"
 	"net/http"
 	"os"
 	"strconv"
 	"time"
 
 	_ "github.com/joho/godotenv/autoload"
-
-	"git_server/internal/database"
 )
 
 type Server struct {
+	db   database.Service
 	port int
-
-	db database.Service
 }
 
 func NewServer() *http.Server {

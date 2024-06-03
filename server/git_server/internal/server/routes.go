@@ -2,9 +2,9 @@ package server
 
 import (
 	"encoding/json"
-	"log"
 	"net/http"
 
+	"github.com/charmbracelet/log"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 )
