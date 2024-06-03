@@ -56,6 +56,10 @@ func (d *ItemDelegate) Update(msg tea.Msg, m *list.Model) tea.Cmd {
 		case key.Matches(msg, d.common.KeyMap.Copy):
 			d.copiedIdx = idx
 			d.common.Output.Copy(item.Command())
+			if m.IsFiltered() {
+				m.ResetFilter()
+				return nil
+			}
 			return m.SetItem(idx, item)
 		}
 	}
