@@ -39,7 +39,6 @@ func NewReposPage(com common.Common) *UserReposPage {
 	sd := statusbar.New(com)
 	s := spinner.New(spinner.WithSpinner(spinner.Dot), spinner.WithStyle(com.Styles.Spinner))
 	list := list.New([]list.Item{}, NewItemDelegate(&com), com.Width, com.Height)
-	list.SetShowStatusBar(false)
 	list.SetShowHelp(false)
 	list.SetShowTitle(false)
 
