@@ -8,6 +8,7 @@ import (
 	reserr "git_server/internal/server/res_err"
 	"math"
 	"net/http"
+	"strings"
 
 	"github.com/charmbracelet/log"
 	"github.com/go-chi/render"
@@ -37,15 +38,48 @@ func (re *Repos) PagenatedRepos(w http.ResponseWriter, r *http.Request) {
 	}
 
 	dataLen := len(data)
-	chunk := math.Ceil(float64(dataLen) / float64(perPage))
+	if perPage != 0 {
+		w.Header().Set("Link", genrateLinks(perPage, page, dataLen))
+	}
+	if perPage == 0 {
+		perPage = 30
+	}
+
 	fromIdx := perPage * (page - 1)
 	toIdx := perPage * page
 	if toIdx > dataLen {
 		toIdx = dataLen
 	}
 
-	w.Header().Set("Link", fmt.Sprintf("%0.0f", chunk))
 	render.JSON(w, r, data[fromIdx:toIdx])
+}
+
+func genLink(page, per_page int, rel string) string {
+	return fmt.Sprintf(`<https://localhost:4069/user/repos?per_page=%d&page=%d>; rel="%s"`, per_page, page, rel)
+}
+
+func genrateLinks(perPage, page, dataLen int) string {
+	chunk := math.Ceil(float64(dataLen) / float64(perPage))
+	nextPage := page + 1
+	lastPage := int(chunk)
+
+	linkBuffer := strings.Builder{}
+
+	if page < lastPage {
+		linkBuffer.WriteString(genLink(nextPage, perPage, "next"))
+		linkBuffer.WriteString(", ")
+		linkBuffer.WriteString(genLink(lastPage, perPage, "last"))
+	}
+	if page > 1 {
+		if linkBuffer.Len() != 0 {
+			linkBuffer.WriteString(", ")
+		}
+		linkBuffer.WriteString(genLink(page-1, perPage, "prev"))
+		linkBuffer.WriteString(", ")
+		linkBuffer.WriteString(genLink(1, perPage, "first"))
+	}
+
+	return linkBuffer.String()
 }
 
 func (re *Repos) ReposHandlear(w http.ResponseWriter, r *http.Request) {

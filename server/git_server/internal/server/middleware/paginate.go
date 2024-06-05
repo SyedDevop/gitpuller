@@ -35,7 +35,7 @@ func Paginate(next http.Handler) http.Handler {
 
 		perPage, err := strconv.Atoi(perPageStr)
 		if err != nil || perPage < 1 {
-			perPage = 30
+			perPage = 0
 		}
 		page, err := strconv.Atoi(pageStr)
 		if err != nil || page < 1 {
