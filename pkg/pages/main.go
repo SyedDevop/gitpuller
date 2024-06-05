@@ -82,18 +82,12 @@ func (m Model) ShortHelp() []key.Binding {
 	switch m.state {
 	case errorState:
 		return []key.Binding{
-			m.common.KeyMap.Back,
+			m.common.KeyMap.Refresh,
 			m.common.KeyMap.Quit,
 			m.common.KeyMap.Help,
 		}
 	default:
-
 		// FIX : Change to use current Page/panes help
-		// return []key.Binding{
-		// 	m.common.KeyMap.Back,
-		// 	m.common.KeyMap.Quit,
-		// 	m.common.KeyMap.Help,
-		// }
 		return m.pages[0].ShortHelp()
 	}
 }
@@ -104,7 +98,7 @@ func (m Model) FullHelp() [][]key.Binding {
 	case errorState:
 		return [][]key.Binding{
 			{
-				m.common.KeyMap.Back,
+				m.common.KeyMap.Refresh,
 			},
 			{
 				m.common.KeyMap.Quit,
@@ -113,15 +107,6 @@ func (m Model) FullHelp() [][]key.Binding {
 		}
 	default:
 		// FIX : Change to use current Page/panes help
-		// return [][]key.Binding{
-		// 	{
-		// 		m.common.KeyMap.Back,
-		// 	},
-		// 	{
-		// 		m.common.KeyMap.Quit,
-		// 		m.common.KeyMap.Help,
-		// 	},
-		// }
 		return m.pages[0].FullHelp()
 	}
 }
@@ -145,11 +130,13 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.showFooter = !m.showFooter
 	case tea.KeyMsg:
 		switch {
-		case key.Matches(msg, m.common.KeyMap.Back) && m.error != nil:
+		// Request to go back
+		case key.Matches(msg, m.common.KeyMap.Refresh) && m.error != nil:
 			m.error = nil
 			m.state = startState
 			// Always show the footer on error.
 			m.showFooter = m.footer.ShowAll()
+			cmds = append(cmds, m.pages[0].Init())
 		case key.Matches(msg, m.common.KeyMap.Help):
 			cmds = append(cmds, footer.ToggleFooterCmd)
 		case key.Matches(msg, m.common.KeyMap.Quit):

@@ -18,7 +18,7 @@ type KeyMap struct {
 	PrevPage   key.Binding
 	NextPage   key.Binding
 	Help       key.Binding
-
+	Refresh    key.Binding
 	SelectItem key.Binding
 	BackItem   key.Binding
 
@@ -214,7 +214,7 @@ func DefaultKeyMap() *KeyMap {
 			"back",
 		),
 	)
-
+	km.Refresh = key.NewBinding(key.WithKeys("r"), key.WithHelp("r", "Refresh"))
 	km.Copy = key.NewBinding(
 		key.WithKeys(
 			"c",
