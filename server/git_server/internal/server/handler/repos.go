@@ -55,7 +55,7 @@ func (re *Repos) PagenatedRepos(w http.ResponseWriter, r *http.Request) {
 }
 
 func genLink(page, per_page int, rel string) string {
-	return fmt.Sprintf(`<https://localhost:4069/user/repos?per_page=%d&page=%d>; rel="%s"`, per_page, page, rel)
+	return fmt.Sprintf(`<http://localhost:4069/user/repos?per_page=%d&page=%d>; rel="%s"`, per_page, page, rel)
 }
 
 func genrateLinks(perPage, page, dataLen int) string {
