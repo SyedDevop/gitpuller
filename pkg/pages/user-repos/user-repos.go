@@ -117,12 +117,18 @@ func (r *UserReposPage) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	if cmd != nil {
 		cmds = append(cmds, cmd)
 	}
-
-	if l.SettingFilter() && r.state != loadingState {
-		if len(l.VisibleItems()) == 0 {
+	if r.state != loadingState && !r.git.Repos.ItraterDone {
+		if l.Paginator.OnLastPage() {
 			r.state = loadingState
-			r.list.ResetFilter()
+			r.page = l.Paginator.Page
 			return r, r.getUserRepos()
+		}
+		if l.SettingFilter() {
+			if len(l.VisibleItems()) == 0 {
+				r.state = loadingState
+				r.list.ResetFilter()
+				return r, r.getUserRepos()
+			}
 		}
 	}
 
