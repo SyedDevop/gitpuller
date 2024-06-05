@@ -2,6 +2,7 @@ package git
 
 import (
 	"fmt"
+	"os"
 	"strings"
 )
 
@@ -14,7 +15,12 @@ import (
 // Returns:
 //   - A formatted URL string to access the user's repositories on GitHub.
 func UserReposURL(name string) string {
-	return fmt.Sprintf("https://api.github.com/users/%s/repos", strings.TrimSpace(name))
+	dev := os.Getenv("DEV")
+	host := "https://api.github.com"
+	if dev == "LOCAL" {
+		host = "http://localhost:4069"
+	}
+	return fmt.Sprintf("%s/users/%s/repos", host, strings.TrimSpace(name))
 }
 
 // AuthReposURL generates a GitHub API URL to fetch repositories for Authenticated user.
@@ -23,7 +29,12 @@ func UserReposURL(name string) string {
 // Returns:
 //   - A formatted URL string to access the Authenticated user's repositories on GitHub.
 func AuthReposURL() string {
-	return "https://api.github.com/user/repos"
+	dev := os.Getenv("DEV")
+	host := "https://api.github.com"
+	if dev == "LOCAL" {
+		host = "http://localhost:4069"
+	}
+	return fmt.Sprintf("%s/user/repos", host)
 }
 
 // AddPaginationParams adds pagination parameters to a given URL.
