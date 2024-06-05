@@ -120,7 +120,6 @@ func (r *UserReposPage) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	if r.state != loadingState && !r.git.Repos.ItraterDone {
 		if l.Paginator.OnLastPage() {
 			r.state = loadingState
-			r.page = l.Paginator.Page
 			return r, r.getUserRepos()
 		}
 		if l.SettingFilter() {
