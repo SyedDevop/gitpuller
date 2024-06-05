@@ -1,5 +1,9 @@
 run:build
-	@./bin/gitpuller get SyedDevop/Timer-dash ./temp -p
+	DEV=LOCAL ./bin/gitpuller get
+	# @./bin/gitpuller get SyedDevop/Timer-dash ./temp -p
+
+runProd:build
+	DEV=PROD ./bin/gitpuller get
 
 run1:build
 	@./bin/gitpuller get SyedDevop/fiyat_list ./temp -p
