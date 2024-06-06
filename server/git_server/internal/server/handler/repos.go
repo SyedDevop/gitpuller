@@ -4,7 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"git_server/internal/file"
-	"git_server/internal/server/middleware"
+	mware "git_server/internal/server/middleware"
 	reserr "git_server/internal/server/res_err"
 	"math"
 	"net/http"
@@ -31,36 +31,10 @@ func (re *Repos) PagenatedUserRepos(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	perPage, ok := r.Context().Value(middleware.PerPageKey).(int)
-	if !ok {
-		log.Error("ReposHandlear", "err", errors.New("perPage key is missing or invalid"))
-		render.Render(w, r, reserr.ErrInternalServer)
-		return
-	}
-	page, ok := r.Context().Value(middleware.PageKey).(int)
-	if !ok {
-		log.Error("ReposHandlear", "err", errors.New("page key is missing or invalid"))
-		render.Render(w, r, reserr.ErrInternalServer)
-		return
-	}
-
-	dataLen := len(data)
-	if perPage != 0 {
-		w.Header().Set("Link", genrateLinks(perPage, page, dataLen))
-	}
-	if perPage == 0 {
-		perPage = 30
-	}
-
-	fromIdx := perPage * (page - 1)
-	toIdx := perPage * page
-	if toIdx > dataLen {
-		toIdx = dataLen
-	}
-
-	render.JSON(w, r, data[fromIdx:toIdx])
+	paginateAndRender(w, r, data)
 }
 
+// paginateAndRender handles the pagination of the data and renders the appropriate JSON response.
 func (re *Repos) PagenatedRepos(w http.ResponseWriter, r *http.Request) {
 	data, err := file.GetReposJson()
 	if err != nil {
@@ -68,23 +42,61 @@ func (re *Repos) PagenatedRepos(w http.ResponseWriter, r *http.Request) {
 		render.Render(w, r, reserr.ErrRender(err))
 		return
 	}
+	paginateAndRender(w, r, data)
+}
 
-	perPage, ok := r.Context().Value(middleware.PerPageKey).(int)
-	if !ok {
-		log.Error("ReposHandlear", "err", errors.New("perPage key is missing or invalid"))
-		render.Render(w, r, reserr.ErrInternalServer)
+func paginateAndRender(w http.ResponseWriter, r *http.Request, data []map[string]interface{}) {
+	pagin := getPagination(w, r)
+	if pagin == nil {
 		return
 	}
-	page, ok := r.Context().Value(middleware.PageKey).(int)
-	if !ok {
-		log.Error("ReposHandlear", "err", errors.New("page key is missing or invalid"))
-		render.Render(w, r, reserr.ErrInternalServer)
-		return
-	}
-
 	dataLen := len(data)
-	if perPage != 0 {
-		w.Header().Set("Link", genrateLinks(perPage, page, dataLen))
+	if pagin.PerPage != 0 {
+		w.Header().Set("Link", genrateLinks(pagin.PerPage, pagin.Page, dataLen))
+	}
+	window := getDataWindow(w, r, dataLen, pagin.PerPage, pagin.Page)
+	if window == nil {
+		return
+	}
+	render.JSON(w, r, data[window.fromIdx:window.toIdx])
+}
+
+// Pagination holds pagination information such as items per page and current page number.
+type Pagination struct {
+	PerPage int `json:"per_page"`
+	Page    int `json:"page"`
+}
+
+// getPagination extracts pagination parameters (perPage and page) from the request context.
+// It returns a Pagination struct or nil if an error occurs.
+func getPagination(w http.ResponseWriter, r *http.Request) *Pagination {
+	perPage, ok := r.Context().Value(mware.PerPageKey).(int)
+	if !ok {
+		log.Error("ReposHandler", "err", errors.New("perPage key is missing or invalid"))
+		render.Render(w, r, reserr.ErrInternalServer)
+		return nil
+	}
+	page, ok := r.Context().Value(mware.PageKey).(int)
+	if !ok {
+		log.Error("ReposHandler", "err", errors.New("page key is missing or invalid"))
+		render.Render(w, r, reserr.ErrInternalServer)
+		return nil
+	}
+	return &Pagination{PerPage: perPage, Page: page}
+}
+
+// Window defines the index range for the current page's data slice.
+type Window struct {
+	fromIdx, toIdx int
+}
+
+// getDataWindow calculates the data slice indices for the current page based on the pagination parameters.
+// It returns a Window struct or nil if an error occurs.
+func getDataWindow(w http.ResponseWriter, r *http.Request, dataLen, perPage, page int) *Window {
+	chunk := math.Ceil(float64(dataLen) / float64(perPage))
+	if page > int(chunk) {
+		render.JSON(w, r, []string{})
+		return nil
 	}
 	if perPage == 0 {
 		perPage = 30
@@ -95,8 +107,7 @@ func (re *Repos) PagenatedRepos(w http.ResponseWriter, r *http.Request) {
 	if toIdx > dataLen {
 		toIdx = dataLen
 	}
-
-	render.JSON(w, r, data[fromIdx:toIdx])
+	return &Window{fromIdx: fromIdx, toIdx: toIdx}
 }
 
 func genLink(page, per_page int, rel string) string {
@@ -109,6 +120,15 @@ func genrateLinks(perPage, page, dataLen int) string {
 	lastPage := int(chunk)
 
 	linkBuffer := strings.Builder{}
+
+	if page > lastPage {
+		linkBuffer.WriteString(genLink(lastPage, perPage, "prev"))
+		linkBuffer.WriteString(", ")
+		linkBuffer.WriteString(genLink(lastPage, perPage, "last"))
+		linkBuffer.WriteString(", ")
+		linkBuffer.WriteString(genLink(1, perPage, "first"))
+		return linkBuffer.String()
+	}
 
 	if page < lastPage {
 		linkBuffer.WriteString(genLink(nextPage, perPage, "next"))
@@ -125,20 +145,4 @@ func genrateLinks(perPage, page, dataLen int) string {
 	}
 
 	return linkBuffer.String()
-}
-
-func (re *Repos) ReposHandlear(w http.ResponseWriter, r *http.Request) {
-	data := file.GetReposByte()
-	// if err != nil {
-	// 	log.Error("ReposHandlear", "err", err)
-	// 	render.Render(w, r, ErrRender(err))
-	// 	return
-	// }
-	// render.JSON(w, r, data)
-
-	w.Header().Set("Content-Type", "application/json")
-	if status, ok := r.Context().Value(render.StatusCtxKey).(int); ok {
-		w.WriteHeader(status)
-	}
-	w.Write(data)
 }

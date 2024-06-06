@@ -5,7 +5,7 @@ import (
 	// "log"
 
 	"git_server/internal/server/handler"
-	myMidd "git_server/internal/server/middleware"
+	mware "git_server/internal/server/middleware"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
@@ -27,11 +27,11 @@ func (s *Server) RegisterRoutes() http.Handler {
 	reposHan := &handler.Repos{}
 
 	r.Route("/user", func(r chi.Router) {
-		r.With(myMidd.Paginate).Get("/repos", reposHan.PagenatedRepos)
+		r.With(mware.Paginate).Get("/repos", reposHan.PagenatedRepos)
 	})
 
 	r.Route("/users", func(r chi.Router) {
-		r.With(myMidd.Paginate).Get("/{user}/repos", reposHan.PagenatedUserRepos)
+		r.With(mware.Paginate).Get("/{user}/repos", reposHan.PagenatedUserRepos)
 	})
 	return r
 }
