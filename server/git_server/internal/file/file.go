@@ -20,11 +20,12 @@ func ReadJson(name string) (JsonDataType, error) {
 	fileJson := fmt.Sprintf("%s.json", name)
 	file, err := os.ReadFile(fileJson)
 	if err != nil {
+		fmt.Printf("File#ReadJson (ReadFile): %v\n", err)
 		return nil, err
 	}
 
 	var jsonMap JsonDataType
-	err = json.Unmarshal(reposJson, &file)
+	err = json.Unmarshal(file, &jsonMap)
 	if err != nil {
 		return nil, err
 	}

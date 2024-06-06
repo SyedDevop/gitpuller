@@ -11,10 +11,55 @@ import (
 	"strings"
 
 	"github.com/charmbracelet/log"
+	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/render"
 )
 
 type Repos struct{}
+
+func (re *Repos) PagenatedUserRepos(w http.ResponseWriter, r *http.Request) {
+	user := chi.URLParam(r, "user")
+	if user == "" {
+		render.Render(w, r, reserr.ErrNotFound)
+		return
+	}
+
+	data, err := file.ReadJson(user)
+	if err != nil {
+		log.Error("ReposHandlear", "err", err)
+		render.Render(w, r, reserr.ErrRender(err))
+		return
+	}
+
+	perPage, ok := r.Context().Value(middleware.PerPageKey).(int)
+	if !ok {
+		log.Error("ReposHandlear", "err", errors.New("perPage key is missing or invalid"))
+		render.Render(w, r, reserr.ErrInternalServer)
+		return
+	}
+	page, ok := r.Context().Value(middleware.PageKey).(int)
+	if !ok {
+		log.Error("ReposHandlear", "err", errors.New("page key is missing or invalid"))
+		render.Render(w, r, reserr.ErrInternalServer)
+		return
+	}
+
+	dataLen := len(data)
+	if perPage != 0 {
+		w.Header().Set("Link", genrateLinks(perPage, page, dataLen))
+	}
+	if perPage == 0 {
+		perPage = 30
+	}
+
+	fromIdx := perPage * (page - 1)
+	toIdx := perPage * page
+	if toIdx > dataLen {
+		toIdx = dataLen
+	}
+
+	render.JSON(w, r, data[fromIdx:toIdx])
+}
 
 func (re *Repos) PagenatedRepos(w http.ResponseWriter, r *http.Request) {
 	data, err := file.GetReposJson()

@@ -29,6 +29,10 @@ func (s *Server) RegisterRoutes() http.Handler {
 	r.Route("/user", func(r chi.Router) {
 		r.With(myMidd.Paginate).Get("/repos", reposHan.PagenatedRepos)
 	})
+
+	r.Route("/users", func(r chi.Router) {
+		r.With(myMidd.Paginate).Get("/{user}/repos", reposHan.PagenatedUserRepos)
+	})
 	return r
 }
 
