@@ -1,6 +1,7 @@
 package userrepos
 
 import (
+	"errors"
 	"fmt"
 	"strings"
 
@@ -13,6 +14,7 @@ import (
 	"github.com/charmbracelet/bubbles/spinner"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
+	"github.com/spf13/viper"
 )
 
 type state int
@@ -23,6 +25,7 @@ type GoBackMsg struct{}
 const (
 	loadingState state = iota
 	readyState
+	errorState
 )
 
 type UserReposPage struct {
@@ -33,6 +36,7 @@ type UserReposPage struct {
 	spinner   spinner.Model
 	cursor    int
 	state     state
+	err       error
 }
 
 func NewReposPage(com common.Common) *UserReposPage {
@@ -42,16 +46,10 @@ func NewReposPage(com common.Common) *UserReposPage {
 	list.SetShowHelp(false)
 	list.SetShowTitle(false)
 
-	g := gituser.NewGitUser("SyedDevop")
 	per := 20
 	page := 1
 
-	// FIX: change to be authenticated of user based ReposLink
-	// - [] if there is a user Name
-	// - [] else if there is a authenticated user
-	// - [] else if there is a default user
-	// - [] else Panic and say any one of the option needs to be provided,
-	g.Repos.SetNextLink(git.AddPaginationParams(git.AuthReposURL(), &per, &page))
+	g := gituser.NewGitUser()
 
 	repos := &UserReposPage{
 		statusbar: sd,
@@ -62,6 +60,29 @@ func NewReposPage(com common.Common) *UserReposPage {
 		git:       g,
 	}
 	repos.list.SetSize(com.Width, com.Height)
+
+	// TODO: extract this to repos method.
+	// this is set from --user flag
+	if viper.IsSet("user") {
+		name := viper.GetString("user")
+		repos.git.SetUserName(name)
+		repos.git.Repos.SetNextLink(git.AddPaginationParams(git.UserReposURL(name), &per, &page))
+	} else if viper.IsSet("token") {
+		name := viper.GetString("userName")
+		repos.git.SetUserName(name)
+		repos.git.Repos.SetNextLink(git.AddPaginationParams(git.AuthReposURL(), &per, &page))
+	} else if viper.IsSet("userName") {
+		// this is set from config file
+		name := viper.GetString("userName")
+		repos.git.SetUserName(name)
+		repos.git.Repos.SetNextLink(git.AddPaginationParams(git.UserReposURL(name), &per, &page))
+	} else {
+		repos.state = errorState
+		repos.err = errors.New("please provide a user name and token in the config file, or use the -u/--user flag to specify a user name for this session")
+	}
+
+	repos.state = errorState
+	repos.err = errors.New("Fix escp codes")
 	return repos
 }
 
@@ -77,6 +98,11 @@ func (r *UserReposPage) getUserRepos() tea.Cmd {
 }
 
 func (r *UserReposPage) Init() tea.Cmd {
+	if r.state == errorState {
+		return func() tea.Msg {
+			return r.err
+		}
+	}
 	return tea.Batch(
 		r.statusbar.Init(),
 		r.spinner.Tick,

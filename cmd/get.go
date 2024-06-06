@@ -8,10 +8,14 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/log"
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 )
 
 // getCmd represents the get command
-var parentFlag bool
+var (
+	parentFlag bool
+	userName   string
+)
 
 var getCmd = &cobra.Command{
 	Use:   "get [url]",
@@ -126,6 +130,8 @@ func init() {
 	// and all subcommands, e.g.:
 	// getCmd.PersistentFlags().String("foo", "", "A help for foo")
 	getCmd.Flags().BoolVarP(&parentFlag, "parent", "p", false, "Keep the repository's parent directory")
+	getCmd.PersistentFlags().StringVarP(&userName, "user", "u", "", "GitHub username associated with the repository")
+	viper.BindPFlag("user", getCmd.PersistentFlags().Lookup("user"))
 	// Cobra supports local flags which will only run when this command
 	// is called directly, e.g.:
 	// getCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")

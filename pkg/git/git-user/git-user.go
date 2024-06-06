@@ -35,7 +35,7 @@ type (
 	}
 )
 
-func NewGitUser(name string) *GitUser {
+func NewGitUser() *GitUser {
 	c := client.NewClint()
 
 	c.AddHeader("Accept", "application/vnd.github+json")
@@ -56,14 +56,15 @@ func NewGitUser(name string) *GitUser {
 	return &GitUser{
 		Repos:    repos,
 		Client:   c,
-		UserName: name,
+		UserName: "",
 		UserUrl:  "",
 	}
 }
 
-func (g *GitUser) SetUserUrl(url string) { g.UserUrl = url }
-func (g *GitUser) ProjectName() string   { return g.UserName }
-func (g *GitUser) Name() string          { return g.UserName }
+func (g *GitUser) SetUserUrl(url string)   { g.UserUrl = url }
+func (g *GitUser) SetUserName(name string) { g.UserName = name }
+func (g *GitUser) ProjectName() string     { return g.UserName }
+func (g *GitUser) Name() string            { return g.UserName }
 func (g *GitUser) Description() string {
 	return "This is the Repositories of " + g.UserUrl + ""
 }
