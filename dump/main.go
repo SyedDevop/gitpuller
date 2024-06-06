@@ -2,6 +2,7 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"io"
 	"os"
 	"path/filepath"
@@ -32,21 +33,22 @@ func run(path, fileName string) error {
 	start := time.Now()
 	log.Info("Start downloading file", "path", path, "fileName", fileName)
 
-	res, err := c.Get(git.AddPaginationParams(git.AuthReposURL(), &per, &pages))
+	res, err := c.Get(git.AddPaginationParams(git.UserReposURL(fileName), &per, &pages))
 	if err != nil {
 		return err
 	}
 	defer res.Body.Close()
 
 	log.Info("Creating the file", "path", path, "fileName", fileName)
-	fName := filepath.Join(path, fileName)
+	fileJson := fmt.Sprintf("%s.json", fileName)
+	fName := filepath.Join(path, fileJson)
 	file, err := os.Create(fName)
 	if err != nil {
 		return err
 	}
 	defer file.Close()
 
-	log.Print("Done downloading file", "path", path, "fileName", fileName, "duration", time.Since(start))
+	log.Print("Done downloading file", "path", path, "fileName", fileJson, "duration", time.Since(start))
 	_, err = io.Copy(file, res.Body)
 	if err != nil {
 		return err
