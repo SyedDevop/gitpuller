@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"path/filepath"
+	"runtime"
 )
 
 //go:embed repos.json
@@ -16,9 +18,22 @@ func GetReposByte() []byte {
 
 type JsonDataType = []map[string]interface{}
 
+func GetCurDir() (string, bool) {
+	_, filename, _, ok := runtime.Caller(0)
+
+	return filepath.Dir(filename), ok
+}
+
 func ReadJson(name string) (JsonDataType, error) {
 	fileJson := fmt.Sprintf("%s.json", name)
-	file, err := os.ReadFile(fileJson)
+
+	curDir, ok := GetCurDir()
+	if !ok {
+		fmt.Println("File#ReadJson (curDir): unable to determine current file path")
+		return nil, fmt.Errorf("unable to determine current file path")
+	}
+
+	file, err := os.ReadFile(filepath.Join(curDir, fileJson))
 	if err != nil {
 		fmt.Printf("File#ReadJson (ReadFile): %v\n", err)
 		return nil, err
