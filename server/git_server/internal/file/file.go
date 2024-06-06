@@ -3,6 +3,8 @@ package file
 import (
 	_ "embed"
 	"encoding/json"
+	"fmt"
+	"os"
 )
 
 //go:embed repos.json
@@ -12,8 +14,25 @@ func GetReposByte() []byte {
 	return reposJson
 }
 
-func GetReposJson() ([]map[string]interface{}, error) {
-	var jsonMap []map[string]interface{}
+type JsonDataType = []map[string]interface{}
+
+func ReadJson(name string) (JsonDataType, error) {
+	fileJson := fmt.Sprintf("%s.json", name)
+	file, err := os.ReadFile(fileJson)
+	if err != nil {
+		return nil, err
+	}
+
+	var jsonMap JsonDataType
+	err = json.Unmarshal(reposJson, &file)
+	if err != nil {
+		return nil, err
+	}
+	return jsonMap, nil
+}
+
+func GetReposJson() (JsonDataType, error) {
+	var jsonMap JsonDataType
 	err := json.Unmarshal(reposJson, &jsonMap)
 	if err != nil {
 		return nil, err

@@ -27,4 +27,4 @@ tmp/
 
 # Project build
 main
-internal/file/repos.json
+internal/file/*.json
