@@ -44,6 +44,7 @@ func NewReposPage(com common.Common) *UserReposPage {
 	list := list.New([]list.Item{}, NewItemDelegate(&com), com.Width, com.Height)
 	list.SetShowHelp(false)
 	list.SetShowTitle(false)
+	list.DisableQuitKeybindings()
 
 	per := 20
 	page := 1
@@ -168,8 +169,8 @@ func (r *UserReposPage) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 func (r *UserReposPage) View() string {
 	wm, hm := r.getMargins()
-	hm += r.common.Styles.Tabs.GetHeight() +
-		r.common.Styles.Tabs.GetVerticalFrameSize()
+	// hm += r.common.Styles.Tabs.GetHeight() +
+	// 	r.common.Styles.Tabs.GetVerticalFrameSize()
 	s := r.common.Styles.Repo.Base.Copy().
 		Width(r.common.Width - wm).
 		Height(r.common.Height - hm)
@@ -260,6 +261,8 @@ func (r *UserReposPage) ShortHelp() []key.Binding {
 		r.common.KeyMap.BackItem,
 		k.CursorUp,
 		k.CursorDown,
+		r.common.KeyMap.Quit,
+		r.common.KeyMap.Help,
 	}
 	// case filesViewContent:
 	// 	b := []key.Binding{
