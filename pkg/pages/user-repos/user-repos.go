@@ -8,7 +8,6 @@ import (
 	"github.com/SyedDevop/gitpuller/pkg/git"
 	gituser "github.com/SyedDevop/gitpuller/pkg/git/git-user"
 	"github.com/SyedDevop/gitpuller/pkg/ui/common"
-	"github.com/SyedDevop/gitpuller/pkg/ui/statusbar"
 	"github.com/charmbracelet/bubbles/key"
 	"github.com/charmbracelet/bubbles/list"
 	"github.com/charmbracelet/bubbles/spinner"
@@ -29,19 +28,19 @@ const (
 )
 
 type UserReposPage struct {
-	list      list.Model
-	err       error
-	statusbar *statusbar.Model
-	git       *gituser.GitUser
-	common    common.Common
-	spinner   spinner.Model
-	cursor    int
-	state     state
+	list list.Model
+	err  error
+	// statusbar *statusbar.Model
+	git     *gituser.GitUser
+	common  common.Common
+	spinner spinner.Model
+	cursor  int
+	state   state
 }
 
 func NewReposPage(com common.Common) *UserReposPage {
-	sd := statusbar.New(com)
-	s := spinner.New(spinner.WithSpinner(spinner.Dot), spinner.WithStyle(com.Styles.Spinner))
+	// sd := statusbar.New(com)
+	s := spinner.New(spinner.WithSpinner(spinner.Points), spinner.WithStyle(com.Styles.Spinner))
 	list := list.New([]list.Item{}, NewItemDelegate(&com), com.Width, com.Height)
 	list.SetShowHelp(false)
 	list.SetShowTitle(false)
@@ -52,12 +51,12 @@ func NewReposPage(com common.Common) *UserReposPage {
 	g := gituser.NewGitUser()
 
 	repos := &UserReposPage{
-		statusbar: sd,
-		common:    com,
-		spinner:   s,
-		state:     loadingState,
-		list:      list,
-		git:       g,
+		// statusbar: sd,
+		common:  com,
+		spinner: s,
+		state:   loadingState,
+		list:    list,
+		git:     g,
 	}
 	repos.list.SetSize(com.Width, com.Height)
 
@@ -104,7 +103,7 @@ func (r *UserReposPage) Init() tea.Cmd {
 		}
 	}
 	return tea.Batch(
-		r.statusbar.Init(),
+		// r.statusbar.Init(),
 		r.spinner.Tick,
 		r.getUserRepos(),
 	)
@@ -138,8 +137,6 @@ func (r *UserReposPage) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 		}
 	}
-	// Update the status bar on these events
-	// Must come after we've updated the active tab
 
 	l, cmd := r.list.Update(msg)
 	r.list = l
@@ -160,11 +157,11 @@ func (r *UserReposPage) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 	}
 
-	s, cmd := r.statusbar.Update(msg)
-	r.statusbar = s.(*statusbar.Model)
-	if cmd != nil {
-		cmds = append(cmds, cmd)
-	}
+	// s, cmd := r.statusbar.Update(msg)
+	// r.statusbar = s.(*statusbar.Model)
+	// if cmd != nil {
+	// 	cmds = append(cmds, cmd)
+	// }
 
 	return r, tea.Batch(cmds...)
 }
@@ -180,13 +177,13 @@ func (r *UserReposPage) View() string {
 		Height(r.common.Height - hm)
 
 	var main string
-	var statusbar string
+	// var statusbar string
 	switch r.state {
 	case loadingState:
 		main = fmt.Sprintf("%s loading…", r.spinner.View())
 	case readyState:
 		main = r.list.View()
-		statusbar = r.statusbar.View()
+		// statusbar = r.statusbar.View()
 	}
 
 	// wordSty := r.common.Renderer.NewStyle().MaxWidth(r.common.Width)
@@ -199,7 +196,7 @@ func (r *UserReposPage) View() string {
 		r.headerView(),
 		// word,
 		mainStyle.Render(main),
-		statusbar,
+		// statusbar,
 	)
 	return s.Render(view)
 }
@@ -252,7 +249,7 @@ func (r *UserReposPage) SetSize(width, height int) {
 	r.common.SetSize(width, height)
 	_, hm := r.getMargins()
 	r.list.SetSize(width, height-hm)
-	r.statusbar.SetSize(width, height-hm)
+	// r.statusbar.SetSize(width, height-hm)
 }
 
 // ShortHelp implements help.KeyMap.

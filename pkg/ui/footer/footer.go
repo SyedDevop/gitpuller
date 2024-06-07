@@ -13,9 +13,9 @@ type ToggleFooterMsg struct{}
 
 // Footer is a Bubble Tea model that displays help and other info.
 type Footer struct {
-	common common.Common
 	keymap help.KeyMap
 	help   help.Model
+	common common.Common
 }
 
 // New creates a new Footer.

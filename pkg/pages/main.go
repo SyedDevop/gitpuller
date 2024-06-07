@@ -61,6 +61,7 @@ func NewPageModel(cmd *cobra.Command, fileLogger io.Writer) *Model {
 	}
 
 	m.footer = footer.New(c, m)
+	m.showFooter = true
 	return m
 }
 
@@ -69,7 +70,7 @@ func (m *Model) SetSize(w, h int) {
 	style := m.common.Styles.App.Copy()
 	wm := style.GetHorizontalFrameSize()
 	hm := style.GetVerticalFrameSize()
-	if m.showFooter {
+	if m.footer.ShowAll() {
 		hm += m.footer.Height()
 	}
 
@@ -127,7 +128,7 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	case footer.ToggleFooterMsg:
 		m.footer.SetShowAll(!m.footer.ShowAll())
-		m.showFooter = !m.showFooter
+		// m.showFooter = !m.showFooter
 	case tea.KeyMsg:
 		switch {
 		// Request to go back
