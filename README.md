@@ -23,6 +23,6 @@ go install github.com/SyedDevop/gitpuller
 
 ```
 email: example@email.com
-user:  SyedDevop
+userName:  SyedDevop
 token: ******************** // replace this with tour git token
 ```
