@@ -30,13 +30,13 @@ const (
 
 type UserReposPage struct {
 	list      list.Model
+	err       error
 	statusbar *statusbar.Model
 	git       *gituser.GitUser
 	common    common.Common
 	spinner   spinner.Model
 	cursor    int
 	state     state
-	err       error
 }
 
 func NewReposPage(com common.Common) *UserReposPage {
@@ -81,8 +81,8 @@ func NewReposPage(com common.Common) *UserReposPage {
 		repos.err = errors.New("please provide a user name and token in the config file, or use the -u/--user flag to specify a user name for this session")
 	}
 
-	repos.state = errorState
-	repos.err = errors.New("Fix escp codes")
+	// FIX: this happens in windows only
+	// repos.err = errors.New("Fix escp codes")
 	return repos
 }
 
@@ -112,6 +112,7 @@ func (r *UserReposPage) Init() tea.Cmd {
 
 // Update implements tea.Model.
 func (r *UserReposPage) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	r.common.Logger.Debugf("list Msg from :%T", msg)
 	cmds := make([]tea.Cmd, 0)
 	switch msg := msg.(type) {
 	case []gituser.UserRepos:
@@ -129,10 +130,12 @@ func (r *UserReposPage) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		r.state = readyState
 
 	case spinner.TickMsg:
-		sp, cmd := r.spinner.Update(msg)
-		r.spinner = sp
-		if cmd != nil {
-			cmds = append(cmds, cmd)
+		if r.state == loadingState && r.spinner.ID() == msg.ID {
+			sp, cmd := r.spinner.Update(msg)
+			r.spinner = sp
+			if cmd != nil {
+				cmds = append(cmds, cmd)
+			}
 		}
 	}
 	// Update the status bar on these events
