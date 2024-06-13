@@ -13,8 +13,6 @@ import (
 )
 
 type Page interface {
-	Title() string
-	Render() string
 	ShortHelp() []key.Binding
 	FullHelp() [][]key.Binding
 	Init() tea.Cmd
@@ -65,14 +63,33 @@ func NewPageModel(cmd *cobra.Command, fileLogger io.Writer) *Model {
 	return m
 }
 
-func (m *Model) SetSize(w, h int) {
-	m.common.SetSize(w, h)
+func (m *Model) getMargins() (wm, hm int) {
 	style := m.common.Styles.App.Copy()
-	wm := style.GetHorizontalFrameSize()
-	hm := style.GetVerticalFrameSize()
-	if m.footer.ShowAll() {
+	// switch m.activePage {
+	// case selectionPage:
+	// 	hm += m.common.Styles.ServerName.GetHeight() +
+	// 		m.common.Styles.ServerName.GetVerticalFrameSize()
+	// case repoPage:
+	// }
+	wm += style.GetHorizontalFrameSize()
+	hm += style.GetVerticalFrameSize()
+	if m.showFooter {
+		// NOTE: we don't use the footer's style to determine the margins
+		// because footer.Height() is the height of the footer after applying
+		// the styles.
 		hm += m.footer.Height()
 	}
+	return
+}
+
+func (m *Model) SetSize(w, h int) {
+	m.common.SetSize(w, h)
+	wm, hm := m.getMargins()
+	// wm := style.GetHorizontalFrameSize()
+	// hm := style.GetVerticalFrameSize()
+	// if m.footer.ShowAll() {
+	// 	hm += m.footer.Height()
+	// }
 
 	m.footer.SetSize(w-wm, h-hm)
 	m.pages[0].SetSize(w-wm, h-hm)
@@ -171,13 +188,7 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m *Model) View() string {
-	myStyle := m.common.Styles.App.Copy()
-
-	wm, hm := myStyle.GetHorizontalFrameSize(), myStyle.GetVerticalFrameSize()
-	if m.showFooter {
-		hm += m.footer.Height()
-	}
-
+	wm, hm := m.getMargins()
 	var view string
 	switch m.state {
 	case startState:
@@ -199,6 +210,5 @@ func (m *Model) View() string {
 		view = lipgloss.JoinVertical(lipgloss.Top, view, m.footer.View())
 	}
 
-	view = lipgloss.JoinVertical(lipgloss.Top, view)
-	return myStyle.Render(view)
+	return m.common.Styles.App.Render(view)
 }

@@ -3,7 +3,6 @@ package userrepos
 import (
 	"errors"
 	"fmt"
-	"strings"
 
 	"github.com/SyedDevop/gitpuller/pkg/git"
 	gituser "github.com/SyedDevop/gitpuller/pkg/git/git-user"
@@ -28,9 +27,8 @@ const (
 )
 
 type UserReposPage struct {
-	list list.Model
-	err  error
-	// statusbar *statusbar.Model
+	list    list.Model
+	err     error
 	git     *gituser.GitUser
 	common  common.Common
 	spinner spinner.Model
@@ -39,11 +37,11 @@ type UserReposPage struct {
 }
 
 func NewReposPage(com common.Common) *UserReposPage {
-	// sd := statusbar.New(com)
 	s := spinner.New(spinner.WithSpinner(spinner.Points), spinner.WithStyle(com.Styles.Spinner))
 	list := list.New([]list.Item{}, NewItemDelegate(&com), com.Width, com.Height)
 	list.SetShowHelp(false)
 	list.SetShowTitle(false)
+	list.SetShowStatusBar(false)
 	list.DisableQuitKeybindings()
 
 	per := 20
@@ -52,7 +50,6 @@ func NewReposPage(com common.Common) *UserReposPage {
 	g := gituser.NewGitUser()
 
 	repos := &UserReposPage{
-		// statusbar: sd,
 		common:  com,
 		spinner: s,
 		state:   loadingState,
@@ -104,7 +101,6 @@ func (r *UserReposPage) Init() tea.Cmd {
 		}
 	}
 	return tea.Batch(
-		// r.statusbar.Init(),
 		r.spinner.Tick,
 		r.getUserRepos(),
 	)
@@ -158,99 +154,46 @@ func (r *UserReposPage) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 	}
 
-	// s, cmd := r.statusbar.Update(msg)
-	// r.statusbar = s.(*statusbar.Model)
-	// if cmd != nil {
-	// 	cmds = append(cmds, cmd)
-	// }
-
 	return r, tea.Batch(cmds...)
 }
 
 func (r *UserReposPage) View() string {
 	wm, hm := r.getMargins()
-	// hm += r.common.Styles.Tabs.GetHeight() +
-	// 	r.common.Styles.Tabs.GetVerticalFrameSize()
-	s := r.common.Styles.Repo.Base.Copy().
-		Width(r.common.Width - wm).
-		Height(r.common.Height - hm)
-	mainStyle := r.common.Styles.Repo.Body.Copy().
-		Height(r.common.Height - hm)
 
-	var main string
-	// var statusbar string
+	var view string
 	switch r.state {
 	case loadingState:
-		main = fmt.Sprintf("%s loading…", r.spinner.View())
+		view = fmt.Sprintf("%s loading…", r.spinner.View())
 	case readyState:
-		main = r.list.View()
-		// statusbar = r.statusbar.View()
+		ss := r.common.Renderer.NewStyle().
+			Width(r.common.Width - wm).
+			Height(r.common.Height - hm)
+		view = ss.Render(r.list.View())
 	}
 
-	// wordSty := r.common.Renderer.NewStyle().MaxWidth(r.common.Width)
-	// word := ""
-	// if r.list.FilterState() == list.Filtering {
-	// 	word = fmt.Sprintf("Currently showing %d results", len(r.list.VisibleItems()))
-	// }
-
-	view := lipgloss.JoinVertical(lipgloss.Top,
-		r.headerView(),
-		// word,
-		mainStyle.Render(main),
-		// statusbar,
-	)
-	return s.Render(view)
+	return lipgloss.JoinVertical(lipgloss.Left, r.headerView(), view)
 }
 
 func (r *UserReposPage) headerView() string {
 	truncate := r.common.Renderer.NewStyle().MaxWidth(r.common.Width)
-	header := r.git.ProjectName()
-	if header == "" {
-		header = r.git.Name()
-	}
-	header = r.common.Styles.Repo.HeaderName.Render(header)
-	desc := strings.TrimSpace(r.git.Description())
-	if desc != "" {
-		header = lipgloss.JoinVertical(lipgloss.Top,
-			header,
-			r.common.Styles.Repo.HeaderDesc.Render(desc),
-		)
-	}
-	// urlStyle := r.common.Styles.URLStyle.Copy().
-	// 	Width(r.common.Width - lipgloss.Width(desc) - 1).
-	// 	Align(lipgloss.Right)
-	// var url string
-	// if cfg := r.common.Config(); cfg != nil {
-	// 	url = r.common.CloneCmd(cfg.SSH.PublicURL, r.repos.Name())
-	// }
-	// url = common.TruncateString(url, r.common.Width-lipgloss.Width(desc)-1)
-	// url = r.common.Zone.Mark(
-	// 	fmt.Sprintf("%s-url", r.repos.Name()),
-	// 	urlStyle.Render(url),
-	// )
-
-	header = lipgloss.JoinHorizontal(lipgloss.Left, header)
-
-	style := r.common.Styles.Repo.Header.Copy().Width(r.common.Width)
+	header := r.git.Name()
+	header = r.common.Styles.RepoSelector.User.HeaderName.Render(header)
+	style := r.common.Styles.RepoSelector.User.Header.Copy().Width(r.common.Width)
 	return style.Render(
 		truncate.Render(header),
 	)
 }
 
 func (r *UserReposPage) getMargins() (int, int) {
-	hh := lipgloss.Height(r.headerView())
-	hm := r.common.Styles.Repo.Body.GetVerticalFrameSize() +
-		hh +
-		r.common.Styles.Repo.Header.GetVerticalFrameSize() +
-		r.common.Styles.StatusBar.GetHeight()
-	return 0, hm
+	hh := lipgloss.Height(r.headerView()) +
+		r.common.Styles.RepoSelector.User.Header.GetVerticalFrameSize()
+	return 0, hh
 }
 
 func (r *UserReposPage) SetSize(width, height int) {
 	r.common.SetSize(width, height)
-	_, hm := r.getMargins()
-	r.list.SetSize(width, height-hm)
-	// r.statusbar.SetSize(width, height-hm)
+	wm, hm := r.getMargins()
+	r.list.SetSize(width-wm, height-hm)
 }
 
 // ShortHelp implements help.KeyMap.
@@ -264,15 +207,6 @@ func (r *UserReposPage) ShortHelp() []key.Binding {
 		r.common.KeyMap.Quit,
 		r.common.KeyMap.Help,
 	}
-	// case filesViewContent:
-	// 	b := []key.Binding{
-	// 		f.common.KeyMap.UpDown,
-	// 		f.common.KeyMap.BackItem,
-	// 	}
-	// 	return b
-	// default:
-	// 	return []key.Binding{}
-	// }
 }
 
 func (r *UserReposPage) FullHelp() [][]key.Binding {
@@ -281,16 +215,6 @@ func (r *UserReposPage) FullHelp() [][]key.Binding {
 	actionKeys := []key.Binding{
 		copyKey,
 	}
-	// if !f.code.UseGlamour {
-	// 	actionKeys = append(actionKeys, lineNo)
-	// }
-	//  TODO: implement this for readMe
-	// if common.IsFileMarkdown(f.currentContent.content, f.currentContent.ext) &&
-	// 	!f.blameView {
-	// 	actionKeys = append(actionKeys, preview)
-	// }
-	// switch f.activeView {
-	// case filesViewFiles:
 	copyKey.SetHelp("c", "copy name")
 	k := r.list.KeyMap
 	b = append(b, [][]key.Binding{
@@ -309,34 +233,5 @@ func (r *UserReposPage) FullHelp() [][]key.Binding {
 			k.GoToEnd,
 		},
 	}...)
-	// case filesViewContent:
-	// 	copyKey.SetHelp("c", "copy content")
-	// 	k := f.code.KeyMap
-	// 	b = append(b, []key.Binding{
-	// 		f.common.KeyMap.BackItem,
-	// 	})
-	// 	b = append(b, [][]key.Binding{
-	// 		{
-	// 			k.PageDown,
-	// 			k.PageUp,
-	// 			k.HalfPageDown,
-	// 			k.HalfPageUp,
-	// 		},
-	// 		{
-	// 			k.Down,
-	// 			k.Up,
-	// 			f.common.KeyMap.GotoTop,
-	// 			f.common.KeyMap.GotoBottom,
-	// 		},
-	// 	}...)
-	// }
 	return append(b, actionKeys)
-}
-
-func (r *UserReposPage) Title() string {
-	return "Repos"
-}
-
-func (r *UserReposPage) Render() string {
-	return "Repo"
 }

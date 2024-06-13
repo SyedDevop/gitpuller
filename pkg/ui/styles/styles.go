@@ -21,6 +21,10 @@ type Styles struct {
 	MenuLastUpdate lipgloss.Style
 
 	RepoSelector struct {
+		User struct {
+			Header     lipgloss.Style
+			HeaderName lipgloss.Style
+		}
 		Normal struct {
 			Base    lipgloss.Style
 			Title   lipgloss.Style
@@ -227,6 +231,17 @@ func DefaultStyles(r *lipgloss.Renderer) *Styles {
 
 	s.RepoSelector.Active.Command = s.RepoSelector.Normal.Command.Copy().
 		Foreground(lipgloss.Color("204"))
+
+	s.RepoSelector.User.HeaderName = r.NewStyle().
+		Height(1).
+		Padding(0, 1).
+		Background(lipgloss.Color("87")).
+		Foreground(lipgloss.Color("8")).
+		Bold(true)
+
+	s.RepoSelector.User.Header = r.NewStyle().
+		MaxHeight(1).
+		AlignHorizontal(lipgloss.Center)
 
 	s.MenuItem = r.NewStyle().
 		PaddingLeft(1).
