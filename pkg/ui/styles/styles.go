@@ -235,9 +235,9 @@ func DefaultStyles(r *lipgloss.Renderer) *Styles {
 	s.RepoSelector.User.HeaderName = r.NewStyle().
 		Height(1).
 		Padding(0, 1).
-		Background(lipgloss.Color("87")).
-		Foreground(lipgloss.Color("8")).
-		Bold(true)
+		Background(lipgloss.Color("#5fd7ff")).
+		Foreground(lipgloss.Color("16")).
+		Italic(true)
 
 	s.RepoSelector.User.Header = r.NewStyle().
 		MaxHeight(1).
