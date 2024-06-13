@@ -28,7 +28,7 @@ import (
 // }
 
 func TestGetUserNext(t *testing.T) {
-	gituser := gituser.NewGitUser("SyedDevop")
+	gituser := gituser.NewGitUser()
 
 	per := 5
 	page := 1

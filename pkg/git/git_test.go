@@ -3,7 +3,6 @@ package git_test
 import (
 	"testing"
 
-	"github.com/SyedDevop/gitpuller/pkg/git"
 	gituser "github.com/SyedDevop/gitpuller/pkg/git/git-user"
 	"github.com/stretchr/testify/assert"
 )
@@ -21,17 +20,17 @@ func TestLinkParser(t *testing.T) {
 	}
 
 	rawLink := `<https://api.github.com/user/89797705/repos?per_page=20&page=2>; rel="next", <https://api.github.com/user/89797705/repos?per_page=20&page=2>; rel="last"`
-	assert.Equal(t, out, git.ParseLinkHeader(rawLink))
+	assert.Equal(t, out, gituser.ParseLinkHeader(rawLink))
 
 	rawLink = ` <https://api.github.com/user/89797705/repos?per_page=20&page=2>; rel="next", <https://api.github.com/user/89797705/repos?per_page=20&page=2>; rel="last" `
-	assert.Equal(t, out, git.ParseLinkHeader(rawLink))
+	assert.Equal(t, out, gituser.ParseLinkHeader(rawLink))
 
 	rawLink = `  <https://api.github.com/user/89797705/repos?per_page=20&page=2>; rel="next"  , <https://api.github.com/user/89797705/repos?per_page=20&page=2>;  rel="last" `
-	assert.Equal(t, out, git.ParseLinkHeader(rawLink))
+	assert.Equal(t, out, gituser.ParseLinkHeader(rawLink))
 
 	rawLink = ""
-	assert.Nil(t, git.ParseLinkHeader(rawLink))
+	assert.Nil(t, gituser.ParseLinkHeader(rawLink))
 
 	rawLink = " "
-	assert.Nil(t, git.ParseLinkHeader(rawLink))
+	assert.Nil(t, gituser.ParseLinkHeader(rawLink))
 }
