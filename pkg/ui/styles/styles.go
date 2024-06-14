@@ -180,7 +180,7 @@ func DefaultStyles(r *lipgloss.Renderer) *Styles {
 	s.InactiveBorderColor = lipgloss.Color("241")
 
 	s.App = r.NewStyle().
-		Margin(1, 2)
+		Margin(0, 2)
 
 	// s.ServerName = r.NewStyle().
 	// 	Height(1).
@@ -211,32 +211,32 @@ func DefaultStyles(r *lipgloss.Renderer) *Styles {
 		Foreground(lipgloss.Color("243"))
 
 	s.RepoSelector.Normal.Command = r.NewStyle().
-		Foreground(lipgloss.Color("132"))
+		Foreground(lipgloss.Color("#26b0d6"))
 
 	s.RepoSelector.Normal.Updated = r.NewStyle().
 		Foreground(lipgloss.Color("243"))
 
 	s.RepoSelector.Active.Base = s.RepoSelector.Normal.Base.Copy().
 		BorderStyle(lipgloss.Border{Left: "┃"}).
-		BorderForeground(lipgloss.Color("176"))
+		BorderForeground(lipgloss.Color("#5fd7ff"))
 
 	s.RepoSelector.Active.Title = s.RepoSelector.Normal.Title.Copy().
-		Foreground(lipgloss.Color("212"))
+		Foreground(lipgloss.Color("#5fd7ff"))
 
 	s.RepoSelector.Active.Desc = s.RepoSelector.Normal.Desc.Copy().
 		Foreground(lipgloss.Color("246"))
 
 	s.RepoSelector.Active.Updated = s.RepoSelector.Normal.Updated.Copy().
-		Foreground(lipgloss.Color("212"))
+		Foreground(lipgloss.Color("#5fd7ff"))
 
 	s.RepoSelector.Active.Command = s.RepoSelector.Normal.Command.Copy().
-		Foreground(lipgloss.Color("204"))
+		Foreground(lipgloss.Color("#8dffff"))
 
 	s.RepoSelector.User.HeaderName = r.NewStyle().
 		Height(1).
 		Padding(0, 1).
-		Background(lipgloss.Color("#5fd7ff")).
-		Foreground(lipgloss.Color("16")).
+		// Background(lipgloss.Color("#182428")).
+		Foreground(lipgloss.Color("#5fd7ff")).
 		Italic(true)
 
 	s.RepoSelector.User.Header = r.NewStyle().

@@ -93,7 +93,7 @@ func (d *ItemDelegate) Render(w io.Writer, m list.Model, index int, listItem lis
 	title := i.Title()
 	title = TruncateString(title, m.Width()-styles.Base.GetHorizontalFrameSize())
 	if i.IsPrivate() {
-		title += " 🔒"
+		title += " 🛡️"
 	}
 	if isSelected {
 		title += " "
