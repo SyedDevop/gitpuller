@@ -107,7 +107,7 @@ func DefaultKeyMap() *KeyMap {
 
 	km.Home = key.NewBinding(
 		key.WithKeys("esc", "home", "h"),
-		key.WithHelp("Esc/home/h", "Goto home page"),
+		key.WithHelp("Esc/home/h", "Goto home"),
 	)
 	km.GotoTop = key.NewBinding(
 		key.WithKeys(

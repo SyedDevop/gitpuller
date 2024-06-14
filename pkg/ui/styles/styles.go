@@ -266,12 +266,12 @@ func DefaultStyles(r *lipgloss.Renderer) *Styles {
 		Margin(1, 0)
 
 	s.Repo.Header = r.NewStyle().
-		MaxHeight(2).
-		Border(lipgloss.NormalBorder(), false, false, true, false).
-		BorderForeground(lipgloss.Color("236"))
+		MaxHeight(3)
 
 	s.Repo.HeaderName = r.NewStyle().
-		Foreground(lipgloss.Color("212")).
+		Height(1).
+		MarginTop(1).
+		Foreground(lipgloss.Color("#5fd7ff")).
 		Bold(true)
 
 	s.Repo.HeaderDesc = r.NewStyle().
@@ -299,7 +299,7 @@ func DefaultStyles(r *lipgloss.Renderer) *Styles {
 
 	s.URLStyle = r.NewStyle().
 		MarginLeft(1).
-		Foreground(lipgloss.Color("168"))
+		Foreground(lipgloss.Color("#8dffff"))
 
 	s.Error = r.NewStyle().
 		MarginTop(2)

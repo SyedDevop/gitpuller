@@ -19,7 +19,12 @@ type (
 		PageCount   int
 		ItraterDone bool
 	}
-
+	Repo struct {
+		Client      *client.Client
+		Name        string
+		Description string
+		CloneLink   string
+	}
 	Link struct {
 		Url string
 		Rel string
@@ -27,15 +32,16 @@ type (
 	// ReposLinkIterator interface {
 	// 	Next() ReposLink
 	// }
-	GitUser struct {
+	Git struct {
 		Repos    *Repos
+		Repo     *Repo
 		Client   *client.Client
 		UserName string
 		UserUrl  string
 	}
 )
 
-func NewGitUser() *GitUser {
+func NewGitUser() *Git {
 	c := client.NewClint()
 
 	c.AddHeader("Accept", "application/vnd.github+json")
@@ -53,23 +59,28 @@ func NewGitUser() *GitUser {
 		ItraterDone: false,
 	}
 
-	return &GitUser{
+	repo := &Repo{
+		Client: c,
+	}
+
+	return &Git{
 		Repos:    repos,
+		Repo:     repo,
 		Client:   c,
 		UserName: "",
 		UserUrl:  "",
 	}
 }
 
-func (g *GitUser) SetUserUrl(url string)   { g.UserUrl = url }
-func (g *GitUser) SetUserName(name string) { g.UserName = name }
-func (g *GitUser) ProjectName() string     { return g.UserName }
-func (g *GitUser) Name() string            { return g.UserName }
-func (g *GitUser) Description() string {
+func (g *Git) SetUserUrl(url string)   { g.UserUrl = url }
+func (g *Git) SetUserName(name string) { g.UserName = name }
+func (g *Git) ProjectName() string     { return g.UserName }
+func (g *Git) Name() string            { return g.UserName }
+func (g *Git) Description() string {
 	return "This is the Repositories of " + g.UserUrl + ""
 }
 
-func (g *GitUser) GetUsersRepos(url string) ([]UserRepos, error) {
+func (g *Git) GetUsersRepos(url string) ([]UserRepos, error) {
 	res, err := g.Client.Get(url)
 	if err != nil {
 		return nil, err

@@ -21,7 +21,7 @@ type state int
 type GoBackMsg struct{}
 
 // RepoSelectedMsg is a message that is sent when a repo is selected.
-type RepoSelectedMsg string
+type RepoSelectedMsg = gituser.UserRepos
 
 const (
 	loadingState state = iota
@@ -32,14 +32,14 @@ const (
 type UserReposPage struct {
 	list    list.Model
 	err     error
-	git     *gituser.GitUser
+	git     *gituser.Git
 	common  common.Common
 	spinner spinner.Model
 	cursor  int
 	state   state
 }
 
-func NewReposPage(com common.Common) *UserReposPage {
+func NewReposPage(com common.Common, gitObject *gituser.Git) *UserReposPage {
 	s := spinner.New(spinner.WithSpinner(spinner.Points), spinner.WithStyle(com.Styles.Spinner))
 	list := list.New([]list.Item{}, NewItemDelegate(&com), com.Width, com.Height)
 	list.SetShowHelp(false)
@@ -50,14 +50,12 @@ func NewReposPage(com common.Common) *UserReposPage {
 	per := 20
 	page := 1
 
-	g := gituser.NewGitUser()
-
 	repos := &UserReposPage{
 		common:  com,
 		spinner: s,
 		state:   loadingState,
 		list:    list,
-		git:     g,
+		git:     gitObject,
 	}
 	repos.list.SetSize(com.Width, com.Height)
 
@@ -188,7 +186,7 @@ func (r *UserReposPage) SelectRepoCmd() tea.Msg {
 	curItem := r.list.SelectedItem().(gituser.UserRepos)
 	url := fmt.Sprintf("%s/main", curItem.TreesURL)
 	r.common.SetRepoUrl(url)
-	return RepoSelectedMsg(url)
+	return RepoSelectedMsg(curItem)
 }
 
 func (r *UserReposPage) headerView() string {

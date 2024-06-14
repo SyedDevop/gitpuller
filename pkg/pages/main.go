@@ -3,6 +3,7 @@ package pages
 import (
 	"io"
 
+	gituser "github.com/SyedDevop/gitpuller/pkg/git/git-user"
 	"github.com/SyedDevop/gitpuller/pkg/pages/repo"
 	userrepos "github.com/SyedDevop/gitpuller/pkg/pages/user-repos"
 	"github.com/SyedDevop/gitpuller/pkg/ui/common"
@@ -57,8 +58,10 @@ func NewPageModel(cmd *cobra.Command, fileLogger io.Writer) *Model {
 	ctx := cmd.Context()
 	c := common.NewCommon(ctx, fileLogger, output, 0, 0)
 
-	userRposPage := userrepos.NewReposPage(c)
-	RepoPage := repo.NewRepoPage(c)
+	// TODO: Move the gituser to git module
+	git := gituser.NewGitUser()
+	userRposPage := userrepos.NewReposPage(c, git)
+	RepoPage := repo.NewRepoPage(c, git)
 	m := &Model{
 		common:      c,
 		currentPage: selectionPage,
@@ -115,7 +118,6 @@ func (m Model) ShortHelp() []key.Binding {
 			m.common.KeyMap.Help,
 		}
 	default:
-		// FIX : Change to use current Page/panes help
 		return m.pages[m.currentPage].ShortHelp()
 	}
 }
@@ -134,13 +136,11 @@ func (m Model) FullHelp() [][]key.Binding {
 			},
 		}
 	default:
-		// FIX : Change to use current Page/panes help
 		return m.pages[m.currentPage].FullHelp()
 	}
 }
 
 func (m *Model) Init() tea.Cmd {
-	// FIX : Change to use current Page/panes init
 	rePage := m.pages[m.currentPage]
 	m.state = startState
 	return tea.Batch(m.footer.Init(), rePage.Init())
@@ -155,10 +155,9 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	case userrepos.RepoSelectedMsg:
 		m.currentPage = repoPage
-		m.common.Logger.Debugf("%s m.currentPage %d", msg, m.currentPage)
 		curPage := m.pages[m.currentPage]
 		if repoPage, ok := curPage.(*repo.RepoPage); ok {
-			repoPage.SetRepoUrl(string(msg))
+			repoPage.SetRepo(&msg)
 		}
 		cmd := curPage.Init()
 		if cmd != nil {
