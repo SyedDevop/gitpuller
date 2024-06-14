@@ -3,6 +3,7 @@ package pages
 import (
 	"io"
 
+	"github.com/SyedDevop/gitpuller/pkg/pages/repo"
 	userrepos "github.com/SyedDevop/gitpuller/pkg/pages/user-repos"
 	"github.com/SyedDevop/gitpuller/pkg/ui/common"
 	"github.com/SyedDevop/gitpuller/pkg/ui/footer"
@@ -25,12 +26,19 @@ type Page interface {
 	// Description() string
 }
 
+type Pane int
+
+const (
+	selectionPage Pane = iota
+	repoPage
+)
+
 type Model struct {
 	error       error
 	footer      *footer.Footer
 	pages       []Page
 	common      common.Common
-	currentPage int
+	currentPage Pane
 	state       state
 	showFooter  bool
 }
@@ -49,12 +57,14 @@ func NewPageModel(cmd *cobra.Command, fileLogger io.Writer) *Model {
 	ctx := cmd.Context()
 	c := common.NewCommon(ctx, fileLogger, output, 0, 0)
 
-	r := userrepos.NewReposPage(c)
+	userRposPage := userrepos.NewReposPage(c)
+	RepoPage := repo.NewRepoPage(c)
 	m := &Model{
 		common:      c,
-		currentPage: 0,
+		currentPage: selectionPage,
 		pages: []Page{
-			r,
+			userRposPage,
+			RepoPage,
 		},
 	}
 
@@ -92,7 +102,7 @@ func (m *Model) SetSize(w, h int) {
 	// }
 
 	m.footer.SetSize(w-wm, h-hm)
-	m.pages[0].SetSize(w-wm, h-hm)
+	m.pages[m.currentPage].SetSize(w-wm, h-hm)
 }
 
 // ShortHelp implements help.KeyMap.
@@ -106,7 +116,7 @@ func (m Model) ShortHelp() []key.Binding {
 		}
 	default:
 		// FIX : Change to use current Page/panes help
-		return m.pages[0].ShortHelp()
+		return m.pages[m.currentPage].ShortHelp()
 	}
 }
 
@@ -125,13 +135,13 @@ func (m Model) FullHelp() [][]key.Binding {
 		}
 	default:
 		// FIX : Change to use current Page/panes help
-		return m.pages[0].FullHelp()
+		return m.pages[m.currentPage].FullHelp()
 	}
 }
 
 func (m *Model) Init() tea.Cmd {
 	// FIX : Change to use current Page/panes init
-	rePage := m.pages[0]
+	rePage := m.pages[m.currentPage]
 	m.state = startState
 	return tea.Batch(m.footer.Init(), rePage.Init())
 }
@@ -142,6 +152,18 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
 		m.SetSize(msg.Width, msg.Height)
+
+	case userrepos.RepoSelectedMsg:
+		m.currentPage = repoPage
+		m.common.Logger.Debugf("%s m.currentPage %d", msg, m.currentPage)
+		curPage := m.pages[m.currentPage]
+		if repoPage, ok := curPage.(*repo.RepoPage); ok {
+			repoPage.SetRepoUrl(string(msg))
+		}
+		cmd := curPage.Init()
+		if cmd != nil {
+			cmds = append(cmds, cmd)
+		}
 
 	case footer.ToggleFooterMsg:
 		m.footer.SetShowAll(!m.footer.ShowAll())
@@ -154,7 +176,16 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.state = startState
 			// Always show the footer on error.
 			m.showFooter = m.footer.ShowAll()
-			cmds = append(cmds, m.pages[0].Init())
+			cmds = append(cmds, m.pages[m.currentPage].Init())
+		case key.Matches(msg, m.common.KeyMap.Home):
+			if m.currentPage != selectionPage {
+				m.currentPage = selectionPage
+				curPage := m.pages[m.currentPage]
+				cmd := curPage.Init()
+				if cmd != nil {
+					cmds = append(cmds, cmd)
+				}
+			}
 		case key.Matches(msg, m.common.KeyMap.Help):
 			cmds = append(cmds, footer.ToggleFooterCmd)
 		case key.Matches(msg, m.common.KeyMap.Quit):
@@ -175,8 +206,10 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	}
 
 	// FIX : Change to use current Page/panes
-	rePage, cmd := m.pages[0].Update(msg)
-	m.pages[0] = rePage.(*userrepos.UserReposPage)
+	rePage, cmd := m.pages[m.currentPage].Update(msg)
+	if m.currentPage == selectionPage {
+		m.pages[m.currentPage] = rePage.(*userrepos.UserReposPage)
+	}
 	if cmd != nil {
 		cmds = append(cmds, cmd)
 	}
@@ -193,7 +226,7 @@ func (m *Model) View() string {
 	switch m.state {
 	case startState:
 		// FIX : Change to use current Page/panes
-		view = m.pages[0].View()
+		view = m.pages[m.currentPage].View()
 	case errorState:
 		err := m.common.Styles.ErrorTitle.Render("Bummer")
 		err += m.common.Styles.ErrorBody.Render(m.error.Error())

@@ -20,6 +20,9 @@ type state int
 // GoBackMsg is a message to go back to the previous view.
 type GoBackMsg struct{}
 
+// RepoSelectedMsg is a message that is sent when a repo is selected.
+type RepoSelectedMsg string
+
 const (
 	loadingState state = iota
 	readyState
@@ -124,7 +127,14 @@ func (r *UserReposPage) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		priviesItems = append(priviesItems, newItems...)
 		r.list.SetItems(priviesItems)
 		r.state = readyState
-
+	case tea.KeyMsg:
+		filterState := r.list.FilterState()
+		switch {
+		case key.Matches(msg, r.common.KeyMap.Select):
+			if filterState != list.Filtering {
+				cmds = append(cmds, r.SelectRepoCmd)
+			}
+		}
 	case spinner.TickMsg:
 		if r.state == loadingState && r.spinner.ID() == msg.ID {
 			sp, cmd := r.spinner.Update(msg)
@@ -174,6 +184,13 @@ func (r *UserReposPage) View() string {
 	return lipgloss.JoinVertical(lipgloss.Left, r.headerView(), view)
 }
 
+func (r *UserReposPage) SelectRepoCmd() tea.Msg {
+	curItem := r.list.SelectedItem().(gituser.UserRepos)
+	url := fmt.Sprintf("%s/main", curItem.TreesURL)
+	r.common.SetRepoUrl(url)
+	return RepoSelectedMsg(url)
+}
+
 func (r *UserReposPage) headerView() string {
 	truncate := r.common.Renderer.NewStyle().MaxWidth(r.common.Width)
 	header := r.git.Name()
@@ -202,6 +219,7 @@ func (r *UserReposPage) ShortHelp() []key.Binding {
 	return []key.Binding{
 		r.common.KeyMap.SelectItem,
 		r.common.KeyMap.BackItem,
+		r.common.KeyMap.Select,
 		k.CursorUp,
 		k.CursorDown,
 		r.common.KeyMap.Quit,
@@ -221,6 +239,7 @@ func (r *UserReposPage) FullHelp() [][]key.Binding {
 		{
 			r.common.KeyMap.SelectItem,
 			r.common.KeyMap.BackItem,
+			r.common.KeyMap.Select,
 		},
 		{
 			k.CursorUp,

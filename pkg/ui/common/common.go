@@ -20,8 +20,9 @@ type contextKey struct {
 
 // Keys to use for context.Context.
 var (
-	ConfigKey = &contextKey{"config"}
-	RepoKey   = &contextKey{"repo"}
+	ConfigKey  = &contextKey{"config"}
+	RepoKey    = &contextKey{"repo"}
+	RepoUrlKey = &contextKey{"repoUrl"}
 )
 
 // Common is a struct all components should embed.
@@ -75,6 +76,18 @@ func (c *Common) SetSize(width, height int) {
 // Context returns the context.
 func (c *Common) Context() context.Context {
 	return c.ctx
+}
+
+func (c *Common) SetRepoUrl(url string) {
+	c.ctx = context.WithValue(c.ctx, RepoUrlKey, url)
+}
+
+func (c *Common) GetRepoUrl() string {
+	v := c.ctx.Value(RepoUrlKey)
+	if url, ok := v.(string); ok {
+		return url
+	}
+	return ""
 }
 
 // Config returns the server config.

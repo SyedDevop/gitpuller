@@ -21,8 +21,8 @@ type KeyMap struct {
 	Refresh    key.Binding
 	SelectItem key.Binding
 	BackItem   key.Binding
-
-	Copy key.Binding
+	Home       key.Binding
+	Copy       key.Binding
 }
 
 // DefaultKeyMap returns the default key map.
@@ -105,13 +105,16 @@ func DefaultKeyMap() *KeyMap {
 		),
 	)
 
+	km.Home = key.NewBinding(
+		key.WithKeys("esc", "home", "h"),
+		key.WithHelp("Esc/home/h", "Goto home page"),
+	)
 	km.GotoTop = key.NewBinding(
 		key.WithKeys(
-			"home",
 			"g",
 		),
 		key.WithHelp(
-			"g/home",
+			"g",
 			"goto top",
 		),
 	)
