@@ -15,7 +15,10 @@ import (
 	"github.com/go-chi/render"
 )
 
-type Repos struct{}
+type (
+	Repos         struct{}
+	ReposDataType = []map[string]interface{}
+)
 
 func (re *Repos) PagenatedUserRepos(w http.ResponseWriter, r *http.Request) {
 	user := chi.URLParam(r, "user")
@@ -24,7 +27,8 @@ func (re *Repos) PagenatedUserRepos(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	data, err := file.ReadJson(user)
+	var data ReposDataType
+	err := file.ReadJson(user, &data)
 	if err != nil {
 		log.Error("ReposHandlear", "err", err)
 		render.Render(w, r, reserr.ErrRender(err))
@@ -36,7 +40,8 @@ func (re *Repos) PagenatedUserRepos(w http.ResponseWriter, r *http.Request) {
 
 // paginateAndRender handles the pagination of the data and renders the appropriate JSON response.
 func (re *Repos) PagenatedRepos(w http.ResponseWriter, r *http.Request) {
-	data, err := file.GetReposJson()
+	var data ReposDataType
+	err := file.ReadJson("SyedDevop", &data)
 	if err != nil {
 		log.Error("ReposHandlear", "err", err)
 		render.Render(w, r, reserr.ErrRender(err))
