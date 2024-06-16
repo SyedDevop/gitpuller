@@ -25,6 +25,7 @@ func (s *Server) RegisterRoutes() http.Handler {
 	r.Get("/health", s.healthHandler)
 
 	reposHan := &handler.Repos{}
+	repoHan := &handler.Repo{}
 
 	r.Route("/user", func(r chi.Router) {
 		r.With(mware.Paginate).Get("/repos", reposHan.PagenatedRepos)
@@ -33,6 +34,7 @@ func (s *Server) RegisterRoutes() http.Handler {
 	r.Route("/users", func(r chi.Router) {
 		r.With(mware.Paginate).Get("/{user}/repos", reposHan.PagenatedUserRepos)
 	})
+	r.Get("/repos/{owner}/{repo}/git/trees/{sha}", repoHan.RepoTree)
 	return r
 }
 
