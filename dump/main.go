@@ -55,7 +55,7 @@ func run(path, fileName, getData string) error {
 	start := time.Now()
 	log.Info("Start downloading file", "path", path, "fileName", fileName)
 
-	res, err := c.Get(git.AddPaginationParams(git.UserReposURL(fileName), &per, &pages))
+	res, err := c.Get(git.AddPaginationParams(git.AuthReposURL(), &per, &pages))
 	if err != nil {
 		return err
 	}
