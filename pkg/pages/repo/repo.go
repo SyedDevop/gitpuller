@@ -22,11 +22,22 @@ const (
 	errorState
 )
 
+type Pane interface {
+	Init() tea.Cmd
+	Update(msg tea.Msg) (tea.Model, tea.Cmd)
+	View() string
+	SetSize(width, height int)
+	ShortHelp() []key.Binding
+	FullHelp() [][]key.Binding
+	TabTitle() string
+}
+
 type RepoPage struct {
 	err          error
 	git          *gituser.Git
 	tabs         *tabs.Tabs
 	SelectedRepo *gituser.UserRepos
+	panes        []Pane
 	repoUrl      string
 	common       common.Common
 	spinner      spinner.Model
@@ -34,10 +45,19 @@ type RepoPage struct {
 	state        state
 }
 
+func NewPane(com common.Common) []Pane {
+	pane := []Pane{NewFile(com)}
+	return pane
+}
+
 func NewRepoPage(com common.Common, gitObject *gituser.Git) *RepoPage {
 	s := spinner.New(spinner.WithSpinner(spinner.Points), spinner.WithStyle(com.Styles.Spinner))
-
-	tb := tabs.New(com, []string{"file", "branch", "tag"})
+	panes := NewPane(com)
+	ts := make([]string, 0)
+	for _, c := range panes {
+		ts = append(ts, c.TabTitle())
+	}
+	tb := tabs.New(com, ts)
 
 	// FIX: if SelectedRepo is nil Check if repo name in context else panic.
 	repos := &RepoPage{
@@ -48,6 +68,7 @@ func NewRepoPage(com common.Common, gitObject *gituser.Git) *RepoPage {
 		activeTab:    0,
 		tabs:         tb,
 		SelectedRepo: nil,
+		panes:        panes,
 	}
 
 	return repos
@@ -135,11 +156,8 @@ func (r *RepoPage) View() string {
 		ss := r.common.Renderer.NewStyle().
 			Width(r.common.Width - wm).
 			Height(r.common.Height - hm)
-		url := fmt.Sprintf("Current Tab %s (Tab Index %d)\n%s", r.tabs.GetActiveTabName(), r.activeTab, r.common.GetRepoUrl())
 
-		main = ss.Render(r.common.Renderer.NewStyle().
-			Foreground(lipgloss.Color("#5fd7ff")).Render(url),
-		)
+		main = ss.Render(r.panes[r.activeTab].View())
 	}
 	main = mainStyle.Render(main)
 	view := lipgloss.JoinVertical(lipgloss.Top, r.headerView(), r.tabs.View(), main)
@@ -195,34 +213,35 @@ func (r *RepoPage) SetSize(width, height int) {
 	r.tabs.SetSize(width, height-hm)
 }
 
+func (r *RepoPage) commonHelp() []key.Binding {
+	b := make([]key.Binding, 0)
+	back := r.common.KeyMap.Back
+	back.SetHelp("esc", "back to menu")
+	tab := r.common.KeyMap.Section
+	tab.SetHelp("tab", "switch tab")
+	b = append(b, back)
+	b = append(b, tab)
+	return b
+}
+
 // ShortHelp implements help.KeyMap.
 func (r *RepoPage) ShortHelp() []key.Binding {
-	return []key.Binding{
-		r.common.KeyMap.SelectItem,
-		r.common.KeyMap.BackItem,
-		r.common.KeyMap.Select,
-		r.common.KeyMap.Home,
-		r.common.KeyMap.Quit,
-		r.common.KeyMap.Help,
+	if r.state == loadingState {
+		return []key.Binding{}
 	}
+	b := r.commonHelp()
+	b = append(b, r.panes[r.activeTab].ShortHelp()...)
+	return b
 }
 
 func (r *RepoPage) FullHelp() [][]key.Binding {
+	if r.state == loadingState {
+		return [][]key.Binding{}
+	}
 	b := make([][]key.Binding, 0)
-	actionKeys := []key.Binding{}
-	b = append(b, [][]key.Binding{
-		{
-			r.common.KeyMap.SelectItem,
-			r.common.KeyMap.BackItem,
-			r.common.KeyMap.Select,
-		},
-		{
-			r.common.KeyMap.Home,
-			r.common.KeyMap.Quit,
-			r.common.KeyMap.Help,
-		},
-	}...)
-	return append(b, actionKeys)
+	b = append(b, r.commonHelp())
+	b = append(b, r.panes[r.activeTab].FullHelp()...)
+	return b
 }
 
 func (r *RepoPage) SetRepoUrl(url string) {
