@@ -89,19 +89,20 @@ func (re *Repo) RepoTree(w http.ResponseWriter, r *http.Request) {
 			fileName = val.Path
 			filteredData["url"] = val.URL
 			filteredData["sha"] = val.SHA
-			filteredData["truncated"] = true
+			filteredData["truncated"] = false
 		}
 	}
 
 	treeList := make([]interface{}, 0)
 	for _, val := range data.Tree {
 		if strings.Contains(val.Path, fileName) && val.Path != fileName {
+
 			newVal := val
 			newVal.Path = strings.Replace(val.Path, fileName+"/", "", 1)
 			if recursive != "" {
 				treeList = append(treeList, newVal)
 			} else {
-				if file.GetFileDepth(val.Path) == 1 {
+				if file.GetFileDepth(newVal.Path) == 0 {
 					treeList = append(treeList, newVal)
 				}
 			}
