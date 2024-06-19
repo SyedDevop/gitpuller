@@ -20,6 +20,7 @@ func (s *Server) RegisterRoutes() http.Handler {
 	r.Use(middleware.Recoverer)
 	r.Use(middleware.URLFormat)
 	r.Use(render.SetContentType(render.ContentTypeJSON))
+	r.Use(middleware.Compress(5))
 
 	r.Get("/", s.HelloWorldHandler)
 	r.Get("/health", s.healthHandler)
