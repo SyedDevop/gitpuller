@@ -446,9 +446,10 @@ func DefaultStyles(r *lipgloss.Renderer) *Styles {
 		Foreground(highlightColorDim)
 
 	s.Tree.Normal.FileSize = s.Tree.Normal.FileName.Copy().
-		Foreground(lipgloss.Color("243"))
+		Foreground(lipgloss.Color("243")).Width(8).Align(lipgloss.Right)
 
 	s.Tree.Active.FileSize = s.Tree.Normal.FileName.Copy().
+		Width(10).
 		Foreground(highlightColorDim)
 
 	s.Tree.FileContent = r.NewStyle()

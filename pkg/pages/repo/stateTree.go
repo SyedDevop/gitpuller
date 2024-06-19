@@ -1,6 +1,7 @@
 package repo
 
 import (
+	"fmt"
 	"sync"
 
 	"github.com/SyedDevop/gitpuller/pkg/git"
@@ -11,6 +12,22 @@ type Node struct {
 	Repo         []git.TreeElement
 }
 
+func (n *Node) String() string {
+	sr := make([]int, 0)
+	r := make([]string, 0)
+	for k := range n.SelectedRepo {
+		sr = append(sr, k)
+	}
+	for _, v := range n.Repo {
+		r = append(r, v.Path)
+	}
+	return fmt.Sprintf(`
+    Nodes : {
+    SelectedRepos = %d
+    Repos         = %s
+    }%s`, sr, r, "\n")
+}
+
 // TODO: Rename the FolderRepo to SelectedFolders and SelectedRepo to SelectedFiles
 type StateTree struct {
 	Tree         map[string]*Node
@@ -19,6 +36,22 @@ type StateTree struct {
 	SelectedRepo map[string][]git.TreeElement
 	FolderRepo   []git.TreeElement
 	Mu           sync.Mutex
+}
+
+func (s *StateTree) String() string {
+	t := make([]string, 0)
+	for i, v := range s.Tree {
+		t = append(t, fmt.Sprintf("%s :: %s", i, v.String()))
+	}
+
+	return fmt.Sprintf(`
+CurPath = %s,
+RootPath = %s,
+Tree = %s
+    `,
+		s.CurPath,
+		s.RootPath,
+		t)
 }
 
 // UpdateSelectedRepo toggles the selection status of a repository identified by key.

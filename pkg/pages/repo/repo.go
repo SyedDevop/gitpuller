@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/SyedDevop/gitpuller/pkg/assert"
+	"github.com/SyedDevop/gitpuller/pkg/git"
 	gituser "github.com/SyedDevop/gitpuller/pkg/git/git-user"
 	"github.com/SyedDevop/gitpuller/pkg/ui/common"
 	"github.com/SyedDevop/gitpuller/pkg/ui/tabs"
@@ -74,19 +76,25 @@ func NewRepoPage(com common.Common, gitObject *gituser.Git) *RepoPage {
 	return repos
 }
 
-// func (r *RepoPage) getRepo() tea.Cmd {
-// 	// repos
-// 	return func() tea.Msg {
-// 		repos, err := r.git.Repos.Next()
-// 		if err != nil {
-// 			return err
-// 		}
-// 		return repos
-// 	}
-// }
+func (r *RepoPage) getRepo(url string) tea.Cmd {
+	return func() tea.Msg {
+		repos, err := r.git.Repo.GetTree(url)
+		if err != nil {
+			return err
+		}
+		return repos
+	}
+}
 
 func (r *RepoPage) Init() tea.Cmd {
-	r.state = readyState
+	r.state = loadingState
+
+	assert.Assert(r.SelectedRepo != nil, "RepoPage#GetRepo SelectedRepo cant bee nil")
+	url := git.RepoUrl(r.SelectedRepo.FullName, false)
+	if filePane, ok := r.panes[r.activeTab].(*File); ok {
+		filePane.SetStatePath(r.SelectedRepo.Name)
+	}
+
 	if r.state == errorState {
 		return func() tea.Msg {
 			return r.err
@@ -95,7 +103,7 @@ func (r *RepoPage) Init() tea.Cmd {
 	return tea.Batch(
 		r.spinner.Tick,
 		r.tabs.Init(),
-		// r.getRepo(),
+		r.getRepo(url),
 	)
 }
 
@@ -104,9 +112,14 @@ func (r *RepoPage) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	r.common.Logger.Debugf("list Msg from :%T", msg)
 	cmds := make([]tea.Cmd, 0)
 	switch msg := msg.(type) {
-	case []gituser.UserRepos:
-		r.common.Logger.Debugf("Got Msg from :%T\n and the len: %d is ", msg, len(msg))
+	case []git.TreeElement:
 		r.state = readyState
+	case ReFetchRepo:
+		r.state = loadingState
+		cmds = append(cmds,
+			r.spinner.Tick,
+			r.getRepo(git.CheckDomain(string(msg))),
+		)
 	case tea.KeyMsg:
 		switch {
 		case key.Matches(msg, r.common.KeyMap.Select):
@@ -132,6 +145,13 @@ func (r *RepoPage) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	t, cmd := r.tabs.Update(msg)
 	r.tabs = t.(*tabs.Tabs)
+	if cmd != nil {
+		cmds = append(cmds, cmd)
+	}
+
+	active := r.panes[r.activeTab]
+	p, cmd := active.Update(msg)
+	r.panes[r.activeTab] = p.(Pane)
 	if cmd != nil {
 		cmds = append(cmds, cmd)
 	}

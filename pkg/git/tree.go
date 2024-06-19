@@ -36,6 +36,21 @@ const (
 	TypeTree FileType = "tree"
 )
 
+func (t *TreeElement) IsTree() bool {
+	return t.Type == TypeTree
+}
+
+func (t *TreeElement) TreeType() string {
+	switch t.Type {
+	case Blob:
+		return "file"
+	case TypeTree:
+		return "dir"
+	default:
+		return ""
+	}
+}
+
 type Blobl struct {
 	SHA      string `json:"sha"`
 	NodeID   string `json:"node_id"`

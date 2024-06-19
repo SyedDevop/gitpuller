@@ -6,6 +6,7 @@ import (
 	"github.com/SyedDevop/gitpuller/cmd/util"
 	"github.com/SyedDevop/gitpuller/pkg/assert"
 	"github.com/SyedDevop/gitpuller/pkg/client"
+	"github.com/SyedDevop/gitpuller/pkg/git"
 )
 
 type (
@@ -104,6 +105,34 @@ func (r *Repos) Reset() {
 	r.FirstLink = nil
 	r.PrevLink = nil
 	r.LastLink = nil
+}
+
+func (r *Repo) SetShaToUrl(url string, sha string) string {
+	return fmt.Sprintf("%s/%s", url[:len(url)-6], sha)
+}
+
+func (r *Repo) SetRecursivePram(url string) string {
+	return fmt.Sprintf("%s?recursive=1", url)
+}
+
+func (r *Repo) GetTree(url string) ([]git.TreeElement, error) {
+	res, err := r.Client.Get(url)
+	if err != nil {
+		return nil, err
+	}
+	defer res.Body.Close()
+
+	if res.StatusCode != 200 {
+		body := make([]byte, 1024)
+		res.Body.Read(body)
+		return nil, fmt.Errorf("failed to get repo %s", string(body))
+	}
+	var tree git.Tree
+	err = client.UnmarshalJSON(res, &tree)
+	if err != nil {
+		return nil, err
+	}
+	return tree.Tree, nil
 }
 
 func (r *Repos) String() string {
