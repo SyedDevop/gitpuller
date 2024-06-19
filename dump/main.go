@@ -37,7 +37,7 @@ func run(path, fileName, getData string) error {
 		start := time.Now()
 		log.Info("Start Downloading repo tree from", "file", fName)
 
-		if errs := getGitFile(fName, "repo"); len(errs) != 0 {
+		if errs := getGitFile(fName, fileName); len(errs) != 0 {
 			for _, err := range errs {
 				log.Error("run#getGitFile", err)
 			}
