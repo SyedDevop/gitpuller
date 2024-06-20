@@ -83,8 +83,9 @@ func (f *File) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			if f.items[f.cursor].IsTree() {
 				curNode := f.items[f.cursor]
 				f.cursor = 0
-				f.TreeState.CurPath = filepath.Join(f.TreeState.CurPath, curNode.Path)
-				if chachedNode, exists := f.TreeState.Tree[curNode.Path]; exists {
+				newPath := filepath.Join(f.TreeState.CurPath, curNode.Path)
+				f.TreeState.CurPath = newPath
+				if chachedNode, exists := f.TreeState.Tree[newPath]; exists {
 					f.items = chachedNode.Repo
 				} else {
 					cmds = append(cmds, func() tea.Msg { return ReFetchRepo(*curNode.URL) })
