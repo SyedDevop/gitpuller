@@ -63,6 +63,10 @@ func (f *File) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	cmds := make([]tea.Cmd, 0)
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
+		switch msg.String() {
+		case "p":
+			f.common.Logger.Debug(f.TreeState)
+		}
 		switch {
 		case key.Matches(msg, f.common.KeyMap.Up):
 			f.cursorUp()
@@ -145,8 +149,6 @@ func (f *File) View() string {
 			option.Path = Directory.Render(option.Path)
 		}
 
-		// title := focusedStyle.Render(option.Name)
-
 		s.WriteString(fmt.Sprintf("%s %s%s %s\n", cursor, checked, description, option.Path))
 	}
 	return ss.Render(mainStyle.Render(s.String()))
@@ -164,12 +166,7 @@ func (f *File) GoUpADir() {
 }
 
 func (f *File) UpdateSelected() {
-	// f.TreeState.UpdateTreesSelected(f.cursor)
-	f.common.Logger.Debug("Before", "Tree state", f.TreeState)
-	if node, ok := f.TreeState.Tree[f.TreeState.CurPath]; ok {
-		node.UpdateSelectedRepo(f.cursor)
-	}
-	f.common.Logger.Debug("After", "Tree state", f.TreeState)
+	f.TreeState.UpdateTreesSelected(f.cursor)
 }
 
 func (f *File) SetAllSelected() {
