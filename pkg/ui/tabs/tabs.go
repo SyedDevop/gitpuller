@@ -16,13 +16,13 @@ type ActiveTabMsg int
 
 // Tabs is bubbletea component that displays a list of tabs.
 type Tabs struct {
-	common       common.Common
-	tabs         []string
-	activeTab    int
 	TabSeparator lipgloss.Style
 	TabInactive  lipgloss.Style
 	TabActive    lipgloss.Style
 	TabDot       lipgloss.Style
+	tabs         []string
+	common       common.Common
+	activeTab    int
 	UseDot       bool
 }
 

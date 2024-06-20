@@ -32,6 +32,7 @@ type Pane interface {
 	ShortHelp() []key.Binding
 	FullHelp() [][]key.Binding
 	TabTitle() string
+	Reset() tea.Cmd
 }
 
 type RepoPage struct {
@@ -183,6 +184,12 @@ func (r *RepoPage) View() string {
 	view := lipgloss.JoinVertical(lipgloss.Top, r.headerView(), r.tabs.View(), main)
 
 	return s.Render(view)
+}
+
+func (r *RepoPage) Reset() tea.Cmd {
+	re := r.panes[r.activeTab].Reset()
+	r.activeTab = 0
+	return tea.Batch(re, r.Init())
 }
 
 func TruncateString(s string, max int) string {

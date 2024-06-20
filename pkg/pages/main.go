@@ -21,7 +21,7 @@ type Page interface {
 	View() string
 	SetSize(width, height int)
 	Update(msg tea.Msg) (tea.Model, tea.Cmd)
-
+	Reset() tea.Cmd
 	// ProjectName() string
 	// Name() string
 	// Description() string
@@ -159,7 +159,7 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		if repoPage, ok := curPage.(*repo.RepoPage); ok {
 			repoPage.SetRepo(&msg)
 		}
-		cmd := curPage.Init()
+		cmd := curPage.Reset()
 		if cmd != nil {
 			cmds = append(cmds, cmd)
 		}
@@ -198,7 +198,6 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.showFooter = true
 	}
 
-	// NOTE: This is how you can handle different modal
 	if !m.showFooter && m.currentPage == selectionPage {
 		m.common.Logger.Debug("Showing footer", "isFooterShowing", m.showFooter)
 		m.showFooter = true
@@ -209,7 +208,6 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		cmds = append(cmds, cmd)
 	}
 
-	// FIX : Change to use current Page/panes
 	rePage, cmd := m.pages[m.currentPage].Update(msg)
 	if m.currentPage == selectionPage {
 		m.pages[m.currentPage] = rePage.(*userrepos.UserReposPage)
@@ -229,7 +227,6 @@ func (m *Model) View() string {
 	var view string
 	switch m.state {
 	case startState:
-		// FIX : Change to use current Page/panes
 		view = m.pages[m.currentPage].View()
 	case errorState:
 		err := m.common.Styles.ErrorTitle.Render("Bummer")

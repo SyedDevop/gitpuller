@@ -154,6 +154,12 @@ func (f *File) View() string {
 	return ss.Render(mainStyle.Render(s.String()))
 }
 
+func (f *File) Reset() tea.Cmd {
+	f.TreeState = NewStateTree()
+	f.cursor = 0
+	return nil
+}
+
 func (f *File) GoUpADir() {
 	isBasePath := f.TreeState.RootPath == f.TreeState.CurPath
 	if !isBasePath {

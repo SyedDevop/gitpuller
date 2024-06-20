@@ -182,6 +182,7 @@ func (r *UserReposPage) View() string {
 	return lipgloss.JoinVertical(lipgloss.Left, r.headerView(), view)
 }
 
+func (r *UserReposPage) Reset() tea.Cmd { return nil }
 func (r *UserReposPage) SelectRepoCmd() tea.Msg {
 	curItem := r.list.SelectedItem().(gituser.UserRepos)
 	url := fmt.Sprintf("%s/main", curItem.TreesURL)
