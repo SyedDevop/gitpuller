@@ -38,18 +38,21 @@ type File struct {
 }
 type ReFetchRepo string
 
-func NewFile(com common.Common) *File {
-	statTree := &StateTree{
+func NewStateTree() *StateTree {
+	return &StateTree{
 		Tree:         make(map[string]*Node),
 		SelectedRepo: make(map[string][]git.TreeElement),
 		FolderRepo:   make([]git.TreeElement, 0),
 		RootPath:     "",
 		CurPath:      "",
 	}
+}
+
+func NewFile(com common.Common) *File {
 	return &File{
 		common:    com,
 		items:     make([]git.TreeElement, 0),
-		TreeState: statTree,
+		TreeState: NewStateTree(),
 		keyMap:    NewFileKeyMap(),
 		cursor:    0,
 	}
@@ -226,7 +229,7 @@ func (f *File) cursorUp() {
 }
 
 func (f *File) cursorDown() {
-	if f.cursor > len(f.items)-1 {
+	if f.cursor >= len(f.items)-1 {
 		return
 	}
 	f.cursor++

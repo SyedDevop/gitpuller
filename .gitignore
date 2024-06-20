@@ -33,4 +33,4 @@ go.work
 
 temp/
 bin/
-debug.log
+*.log
