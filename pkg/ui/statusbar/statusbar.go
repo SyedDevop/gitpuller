@@ -9,11 +9,11 @@ import (
 
 // Model is a status bar model.
 type Model struct {
-	common common.Common
 	key    string
 	value  string
 	info   string
 	extra  string
+	common common.Common
 }
 
 // New creates a new status bar component.
@@ -70,7 +70,7 @@ func (s *Model) View() string {
 	if s.info != "" {
 		info = st.StatusBarInfo.Render(s.info)
 	}
-	branch := st.StatusBarBranch.Render(s.extra)
+	branch := st.StatusBarBranch.Render("" + s.extra)
 	maxWidth := s.common.Width - w(key) - w(info) - w(branch) - w(help)
 	v := truncate.StringWithTail(s.value, uint(maxWidth-st.StatusBarValue.GetHorizontalFrameSize()), "…")
 	value := st.StatusBarValue.

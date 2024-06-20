@@ -483,42 +483,43 @@ func DefaultStyles(r *lipgloss.Renderer) *Styles {
 	s.StatusBarKey = r.NewStyle().
 		Bold(true).
 		Padding(0, 1).
-		Background(lipgloss.Color("206")).
-		Foreground(lipgloss.Color("228"))
+		Background(lipgloss.Color("#7aa2f7")).
+		Foreground(lipgloss.Color("#16161e"))
 
 	s.StatusBarValue = r.NewStyle().
 		Padding(0, 1).
-		Background(lipgloss.Color("235")).
-		Foreground(lipgloss.Color("243"))
+		Background(lipgloss.Color("#1a1b26")).
+		Foreground(lipgloss.Color("#c0caf5"))
 
 	s.StatusBarInfo = r.NewStyle().
 		Padding(0, 1).
-		Background(lipgloss.Color("212")).
-		Foreground(lipgloss.Color("230"))
+		Background(lipgloss.Color("#7aa2f7")).
+		Foreground(lipgloss.Color("#16161e"))
 
 	s.StatusBarBranch = r.NewStyle().
 		Padding(0, 1).
-		Background(lipgloss.Color("62")).
-		Foreground(lipgloss.Color("230"))
+		Background(lipgloss.Color("#7aa2f7")).
+		Foreground(lipgloss.Color("#16161e"))
 
 	s.StatusBarHelp = r.NewStyle().
 		Padding(0, 1).
-		Background(lipgloss.Color("237")).
-		Foreground(lipgloss.Color("243"))
+		Background(lipgloss.Color("#3B4261")).
+		Foreground(lipgloss.Color("#7AA2F7"))
 
 	s.Tabs = r.NewStyle().
 		Height(1)
 
-	s.TabInactive = r.NewStyle()
+	s.TabInactive = r.NewStyle().
+		Foreground(lipgloss.Color("#c0caf5"))
 
 	s.TabActive = r.NewStyle().
 		Underline(true).
-		Foreground(lipgloss.Color("36"))
+		Foreground(lipgloss.Color("#7aa2f7"))
 
 	s.TabSeparator = r.NewStyle().
 		SetString("│").
 		Padding(0, 1).
-		Foreground(lipgloss.Color("238"))
+		Foreground(lipgloss.Color("#7aa2f7"))
 
 	s.Code.LineDigit = r.NewStyle().Foreground(lipgloss.Color("239"))
 

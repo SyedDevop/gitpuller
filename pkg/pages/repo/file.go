@@ -17,13 +17,13 @@ import (
 
 var (
 	titleStyle        = lipgloss.NewStyle().Background(lipgloss.Color("#01FAC6")).Foreground(lipgloss.Color("#030303")).Bold(true).Padding(0, 1, 0)
-	focusedStyle      = lipgloss.NewStyle().Foreground(lipgloss.Color("212")).Bold(true)
-	selectedItemStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("#01FAC6")).Bold(true)
+	focusedStyle      = lipgloss.NewStyle().Foreground(lipgloss.Color("#7aa2f7")).Bold(true)
+	selectedItemStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("#73DACA")).Bold(true)
 	redText           = lipgloss.NewStyle().Foreground(lipgloss.Color("196")).Bold(true)
 	fileType          = lipgloss.NewStyle().Foreground(lipgloss.Color("243")).Width(4)
 	fileSize          = lipgloss.NewStyle().Foreground(lipgloss.Color("240")).Width(8).Align(lipgloss.Right)
 	fileMode          = lipgloss.NewStyle().Foreground(lipgloss.Color("240"))
-	Directory         = lipgloss.NewStyle().Foreground(lipgloss.Color("99"))
+	Directory         = lipgloss.NewStyle().Foreground(lipgloss.Color("#2AC3DE"))
 	file              = lipgloss.NewStyle()
 	pathStyle         = lipgloss.NewStyle().Foreground(lipgloss.Color("#01FAC6")).Bold(true).Padding(0, 1, 0)
 )
