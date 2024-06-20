@@ -83,6 +83,7 @@ func (f *File) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			f.common.Logger.Debug("Selected Items", "file", f.TreeState.FolderRepo, "Dir", f.TreeState.SelectedRepo)
 		case key.Matches(msg, f.keyMap.UpDir):
 			f.GoUpADir()
+			cmds = append(cmds, f.FilePathChangeMsg)
 		case key.Matches(msg, f.keyMap.Open):
 			if f.items[f.cursor].IsTree() {
 				curNode := f.items[f.cursor]
@@ -94,6 +95,7 @@ func (f *File) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					cmds = append(cmds, func() tea.Msg { return ReFetchRepo(*curNode.URL) })
 				}
 				f.PositionCursor()
+				cmds = append(cmds, f.FilePathChangeMsg)
 			} else {
 				f.UpdateSelected()
 			}
@@ -114,8 +116,8 @@ func (f *File) View() string {
 	ss := f.common.Styles.Repo.Base.Copy().
 		Width(f.common.Width).
 		Height(f.common.Height)
-	mainStyle := f.common.Styles.Repo.Body.Copy().
-		Height(f.common.Height)
+	// mainStyle := f.common.Styles.Repo.Body.Copy().
+	// 	Height(f.common.Height)
 
 	var s strings.Builder
 
@@ -152,7 +154,7 @@ func (f *File) View() string {
 
 		s.WriteString(fmt.Sprintf("%s %s %s %s\n", cursor, checked, description, option.Path))
 	}
-	return ss.Render(mainStyle.Render(s.String()))
+	return ss.Render(s.String())
 }
 
 func (f *File) Reset() tea.Cmd {
@@ -168,6 +170,10 @@ func (f *File) PositionCursor() {
 	}
 }
 
+func (f *File) FilePathChangeMsg() tea.Msg {
+	return RepoFilePathMsg{}
+}
+
 func (f *File) GoUpADir() {
 	isBasePath := f.TreeState.RootPath == f.TreeState.CurPath
 	if !isBasePath {
@@ -178,6 +184,17 @@ func (f *File) GoUpADir() {
 		}
 		f.PositionCursor()
 	}
+}
+
+// StatusBarValue returns the status bar value.
+func (f *File) StatusBarValue() string {
+	p := f.TreeState.CurPath
+	return p
+}
+
+// StatusBarInfo returns the status bar info.
+func (f *File) StatusBarInfo() string {
+	return fmt.Sprintf("# %d/%d", f.cursor+1, len(f.items))
 }
 
 func (f *File) UpdateSelected() {

@@ -8,6 +8,7 @@ import (
 	"github.com/SyedDevop/gitpuller/pkg/git"
 	gituser "github.com/SyedDevop/gitpuller/pkg/git/git-user"
 	"github.com/SyedDevop/gitpuller/pkg/ui/common"
+	"github.com/SyedDevop/gitpuller/pkg/ui/statusbar"
 	"github.com/SyedDevop/gitpuller/pkg/ui/tabs"
 	"github.com/charmbracelet/bubbles/key"
 	"github.com/charmbracelet/bubbles/spinner"
@@ -15,6 +16,8 @@ import (
 	"github.com/charmbracelet/lipgloss"
 	"github.com/muesli/reflow/truncate"
 )
+
+type RepoFilePathMsg struct{}
 
 type state int
 
@@ -33,6 +36,8 @@ type Pane interface {
 	FullHelp() [][]key.Binding
 	TabTitle() string
 	Reset() tea.Cmd
+	StatusBarValue() string
+	StatusBarInfo() string
 }
 
 type RepoPage struct {
@@ -40,8 +45,10 @@ type RepoPage struct {
 	git          *gituser.Git
 	tabs         *tabs.Tabs
 	SelectedRepo *gituser.UserRepos
-	panes        []Pane
+	statusbar    *statusbar.Model
 	repoUrl      string
+	ref          string
+	panes        []Pane
 	common       common.Common
 	spinner      spinner.Model
 	activeTab    int
@@ -61,7 +68,7 @@ func NewRepoPage(com common.Common, gitObject *gituser.Git) *RepoPage {
 		ts = append(ts, c.TabTitle())
 	}
 	tb := tabs.New(com, ts)
-
+	sb := statusbar.New(com)
 	// FIX: if SelectedRepo is nil Check if repo name in context else panic.
 	repos := &RepoPage{
 		common:       com,
@@ -72,6 +79,8 @@ func NewRepoPage(com common.Common, gitObject *gituser.Git) *RepoPage {
 		tabs:         tb,
 		SelectedRepo: nil,
 		panes:        panes,
+		statusbar:    sb,
+		ref:          "main",
 	}
 
 	return repos
@@ -105,6 +114,7 @@ func (r *RepoPage) Init() tea.Cmd {
 		r.spinner.Tick,
 		r.tabs.Init(),
 		r.getRepo(url),
+		r.statusbar.Init(),
 	)
 }
 
@@ -156,6 +166,18 @@ func (r *RepoPage) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	if cmd != nil {
 		cmds = append(cmds, cmd)
 	}
+
+	// Update the status bar on these events
+	// Must come after we've updated the active tab
+	switch msg.(type) {
+	case ReFetchRepo, tea.KeyMsg, []git.TreeElement:
+		r.setStatusBarInfo()
+	}
+	s, cmd := r.statusbar.Update(msg)
+	r.statusbar = s.(*statusbar.Model)
+	if cmd != nil {
+		cmds = append(cmds, cmd)
+	}
 	return r, tea.Batch(cmds...)
 }
 
@@ -170,6 +192,7 @@ func (r *RepoPage) View() string {
 		Height(r.common.Height - hm)
 
 	var main string
+	var statusbar string
 	switch r.state {
 	case loadingState:
 		main = fmt.Sprintf("%s loading…", r.spinner.View())
@@ -177,11 +200,11 @@ func (r *RepoPage) View() string {
 		ss := r.common.Renderer.NewStyle().
 			Width(r.common.Width - wm).
 			Height(r.common.Height - hm)
-
 		main = ss.Render(r.panes[r.activeTab].View())
+		statusbar = r.statusbar.View()
 	}
 	main = mainStyle.Render(main)
-	view := lipgloss.JoinVertical(lipgloss.Top, r.headerView(), r.tabs.View(), main)
+	view := lipgloss.JoinVertical(lipgloss.Top, r.headerView(), r.tabs.View(), main, statusbar)
 
 	return s.Render(view)
 }
@@ -226,11 +249,29 @@ func (r *RepoPage) headerView() string {
 	)
 }
 
+func (r *RepoPage) setStatusBarInfo() {
+	if r.SelectedRepo == nil {
+		return
+	}
+
+	active := r.panes[r.activeTab]
+	key := r.SelectedRepo.Name
+	value := active.StatusBarValue()
+	info := active.StatusBarInfo()
+	ref := "*"
+	if r.ref != "" {
+		ref = r.ref
+	}
+
+	r.statusbar.SetStatus(key, value, info, ref)
+}
+
 func (r *RepoPage) getMargins() (int, int) {
 	hh := lipgloss.Height(r.headerView())
 	hm := r.common.Styles.Repo.Body.GetVerticalFrameSize() +
 		hh +
-		r.common.Styles.Repo.Header.GetVerticalFrameSize()
+		r.common.Styles.Repo.Header.GetVerticalFrameSize() +
+		r.common.Styles.StatusBar.GetHeight() + 1
 	return 0, hm
 }
 
@@ -238,6 +279,10 @@ func (r *RepoPage) SetSize(width, height int) {
 	r.common.SetSize(width, height)
 	_, hm := r.getMargins()
 	r.tabs.SetSize(width, height-hm)
+	r.statusbar.SetSize(width, height-hm)
+	for _, p := range r.panes {
+		p.SetSize(width, height-hm)
+	}
 }
 
 func (r *RepoPage) commonHelp() []key.Binding {
