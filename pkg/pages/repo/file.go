@@ -86,7 +86,6 @@ func (f *File) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case key.Matches(msg, f.keyMap.Open):
 			if f.items[f.cursor].IsTree() {
 				curNode := f.items[f.cursor]
-				f.cursor = 0
 				newPath := filepath.Join(f.TreeState.CurPath, curNode.Path)
 				f.TreeState.CurPath = newPath
 				if chachedNode, exists := f.TreeState.Tree[newPath]; exists {
@@ -94,6 +93,7 @@ func (f *File) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				} else {
 					cmds = append(cmds, func() tea.Msg { return ReFetchRepo(*curNode.URL) })
 				}
+				f.PositionCursor()
 			} else {
 				f.UpdateSelected()
 			}
@@ -105,6 +105,7 @@ func (f *File) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			SelectedRepo: make(map[int]struct{}),
 			Repo:         msg,
 		}
+		f.PositionCursor()
 	}
 	return f, tea.Batch(cmds...)
 }
@@ -160,6 +161,13 @@ func (f *File) Reset() tea.Cmd {
 	return nil
 }
 
+func (f *File) PositionCursor() {
+	itemLen := len(f.items) - 1
+	if f.cursor > itemLen {
+		f.cursor = itemLen
+	}
+}
+
 func (f *File) GoUpADir() {
 	isBasePath := f.TreeState.RootPath == f.TreeState.CurPath
 	if !isBasePath {
@@ -168,6 +176,7 @@ func (f *File) GoUpADir() {
 			f.items = cachedNode.Repo
 			f.TreeState.CurPath = parentPath
 		}
+		f.PositionCursor()
 	}
 }
 
