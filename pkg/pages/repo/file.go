@@ -149,7 +149,7 @@ func (f *File) View() string {
 			option.Path = Directory.Render(option.Path)
 		}
 
-		s.WriteString(fmt.Sprintf("%s %s%s %s\n", cursor, checked, description, option.Path))
+		s.WriteString(fmt.Sprintf("%s %s %s %s\n", cursor, checked, description, option.Path))
 	}
 	return ss.Render(mainStyle.Render(s.String()))
 }

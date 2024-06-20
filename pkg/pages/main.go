@@ -163,10 +163,11 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		if cmd != nil {
 			cmds = append(cmds, cmd)
 		}
+		m.showFooter = false
 
 	case footer.ToggleFooterMsg:
 		m.footer.SetShowAll(!m.footer.ShowAll())
-		// m.showFooter = !m.showFooter
+		m.showFooter = !m.showFooter
 	case tea.KeyMsg:
 		switch {
 		// Request to go back
@@ -198,6 +199,10 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	}
 
 	// NOTE: This is how you can handle different modal
+	if !m.showFooter && m.currentPage == selectionPage {
+		m.common.Logger.Debug("Showing footer", "isFooterShowing", m.showFooter)
+		m.showFooter = true
+	}
 	f, cmd := m.footer.Update(msg)
 	m.footer = f.(*footer.Footer)
 	if cmd != nil {
