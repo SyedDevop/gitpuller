@@ -5,50 +5,43 @@ import (
 	"time"
 )
 
-type DefaultBranch string
-
-const (
-	Main   DefaultBranch = "main"
-	Master DefaultBranch = "master"
-)
-
 type UserRepos struct {
-	Descript        *string       `json:"description"`
-	License         *License      `json:"license"`
-	Language        *string       `json:"language"`
-	Homepage        *string       `json:"homepage"`
-	SSHURL          string        `json:"ssh_url"`
-	CommitsURL      string        `json:"commits_url"`
-	HTMLURL         string        `json:"html_url"`
-	DefaultBranch   DefaultBranch `json:"default_branch"`
-	Visibility      string        `json:"visibility"`
-	URL             string        `json:"url"`
-	ForksURL        string        `json:"forks_url"`
-	BranchesURL     string        `json:"branches_url"`
-	TagsURL         string        `json:"tags_url"`
-	BlobsURL        string        `json:"blobs_url"`
-	GitTagsURL      string        `json:"git_tags_url"`
-	GitRefsURL      string        `json:"git_refs_url"`
-	TreesURL        string        `json:"trees_url"`
-	LanguagesURL    string        `json:"languages_url"`
-	ContributorsURL string        `json:"contributors_url"`
-	NodeID          string        `json:"node_id"`
-	ContentsURL     string        `json:"contents_url"`
-	DownloadsURL    string        `json:"downloads_url"`
-	LabelsURL       string        `json:"labels_url"`
-	CreatedAt       time.Time     `json:"created_at"`
-	UpdatedAt       time.Time     `json:"updated_at"`
-	PushedAt        time.Time     `json:"pushed_at"`
-	GitURL          string        `json:"git_url"`
-	Name            string        `json:"name"`
-	CloneURL        string        `json:"clone_url"`
-	FullName        string        `json:"full_name"`
-	Owner           Owner         `json:"owner"`
-	Size            int64         `json:"size"`
-	ID              int64         `json:"id"`
-	AllowForking    bool          `json:"allow_forking"`
-	Fork            bool          `json:"fork"`
-	Private         bool          `json:"private"`
+	Descript        *string   `json:"description"`
+	License         *License  `json:"license"`
+	Language        *string   `json:"language"`
+	Homepage        *string   `json:"homepage"`
+	SSHURL          string    `json:"ssh_url"`
+	CommitsURL      string    `json:"commits_url"`
+	HTMLURL         string    `json:"html_url"`
+	DefaultBranch   string    `json:"default_branch"`
+	Visibility      string    `json:"visibility"`
+	URL             string    `json:"url"`
+	ForksURL        string    `json:"forks_url"`
+	BranchesURL     string    `json:"branches_url"`
+	TagsURL         string    `json:"tags_url"`
+	BlobsURL        string    `json:"blobs_url"`
+	GitTagsURL      string    `json:"git_tags_url"`
+	GitRefsURL      string    `json:"git_refs_url"`
+	TreesURL        string    `json:"trees_url"`
+	LanguagesURL    string    `json:"languages_url"`
+	ContributorsURL string    `json:"contributors_url"`
+	NodeID          string    `json:"node_id"`
+	ContentsURL     string    `json:"contents_url"`
+	DownloadsURL    string    `json:"downloads_url"`
+	LabelsURL       string    `json:"labels_url"`
+	CreatedAt       time.Time `json:"created_at"`
+	UpdatedAt       time.Time `json:"updated_at"`
+	PushedAt        time.Time `json:"pushed_at"`
+	GitURL          string    `json:"git_url"`
+	Name            string    `json:"name"`
+	CloneURL        string    `json:"clone_url"`
+	FullName        string    `json:"full_name"`
+	Owner           Owner     `json:"owner"`
+	Size            int64     `json:"size"`
+	ID              int64     `json:"id"`
+	AllowForking    bool      `json:"allow_forking"`
+	Fork            bool      `json:"fork"`
+	Private         bool      `json:"private"`
 }
 
 type License struct {
