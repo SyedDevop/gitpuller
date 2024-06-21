@@ -1,9 +1,7 @@
 run:build
-	@./bin/dump --path="../server/git_server/internal/file" --file="SyedDevop"
-runRepo:build
-	@./bin/dump --path="../server/git_server/internal/file" --file="SyedDevop" --data="repo"
+	@./bin/dump --path="../server/git_server/internal/file" --user="SyedDevop"
 runPrime:build
-	@./bin/dump --path="../server/git_server/internal/file" --file="thePrimeagen"
+	@./bin/dump --path="../server/git_server/internal/file" --user="thePrimeagen"
 
 build:
 	@go build  -o ./bin/

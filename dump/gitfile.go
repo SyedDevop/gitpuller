@@ -1,79 +1,55 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
 	"io"
+	"math"
 	"os"
 	"path/filepath"
-	"runtime"
 	"sync"
 
 	"github.com/SyedDevop/gitpuller/cmd/util"
+	"github.com/SyedDevop/gitpuller/pkg/client"
+	"github.com/SyedDevop/gitpuller/pkg/git"
 	"github.com/charmbracelet/log"
 )
 
-func getCurDir() (string, bool) {
-	_, filename, _, ok := runtime.Caller(0)
-	return filepath.Dir(filename), ok
-}
+// func getCurDir() (string, bool) {
+// 	_, filename, _, ok := runtime.Caller(0)
+// 	return filepath.Dir(filename), ok
+// }
 
-type JsonDataType = []map[string]any
-
-func getGitFile(path, toFile string) []error {
-	c := getGitClient()
-
+func getGitFile(c *client.Client, repos []git.Repos) []error {
 	errList := make([]error, 0)
+	dataLen := len(repos)
+	repoPath := filepath.Join(basePath, "repo")
 
-	log.Info("Getting repo tree url from", "file", path)
-	file, err := os.ReadFile(path)
-	if err != nil {
-		errList = append(errList, err)
-		return errList
-	}
-	var datas JsonDataType
-	err = json.Unmarshal(file, &datas)
-	if err != nil {
-		errList = append(errList, err)
-		return errList
-	}
-	dataLen := len(datas)
-	urls := make([][]string, dataLen)
-	for i, da := range datas {
-
-		if dataurlStr, ok := da["name"].(string); ok {
-			urls[i] = append(urls[i], dataurlStr)
-		}
-		if dataStr, ok := da["trees_url"].(string); ok {
-			url := fmt.Sprintf("%s/main?recursive=1", dataStr[:len(dataStr)-6])
-			urls[i] = append(urls[i], url)
-		}
-	}
-
-	log.Info("Done#Getting repo tree url from", "file", path)
-	toFilePath := filepath.Dir(path)
-
-	if err := util.CreateDir(filepath.Join(toFilePath, toFile)); err != nil {
+	if err := util.CreateDir(repoPath); err != nil {
 		errList = append(errList, err)
 		return errList
 	}
 
 	ws := sync.WaitGroup{}
-	ws.Add(len(urls))
+	ws.Add(dataLen)
 	errChan := make(chan error)
+	TreeData := make(chan git.Tree)
 
 	log.Info("Fetch#Repo from GitHub")
-	for _, data := range urls {
-		go func(name, url string) {
+	go func() {
+		per := math.Floor((float64(len(TreeData)) / float64(dataLen)) * 100)
+		log.Infof("\rOn Downloading repos .... |%0.f| %d/%d", per, len(TreeData), dataLen)
+	}()
+	for _, data := range repos {
+		go func() {
 			defer ws.Done()
-			path := filepath.Join(toFilePath, toFile, fmt.Sprintf("%s.json", data[0]))
+			path := filepath.Join(repoPath, fmt.Sprintf("%s.json", data.Name))
 			file, err := os.Create(path)
 			if err != nil {
 				errChan <- err
 				return
 			}
 			defer file.Close()
-			res, err := c.Get(data[1])
+			res, err := c.Get(data.TreesURL[:len(data.TagsURL)-6])
 			if err != nil {
 				errChan <- err
 				return
@@ -84,7 +60,10 @@ func getGitFile(path, toFile string) []error {
 				errChan <- err
 				return
 			}
-		}(data[0], data[1])
+			var tdata git.Tree
+			client.UnmarshalJSON(res, &tdata)
+			TreeData <- tdata
+		}()
 	}
 	ws.Wait()
 	close(errChan)
