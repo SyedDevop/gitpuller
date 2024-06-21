@@ -323,4 +323,5 @@ func (r *RepoPage) SetRepoUrl(url string) {
 
 func (r *RepoPage) SetRepo(repo *gituser.UserRepos) {
 	r.SelectedRepo = repo
+	r.ref = repo.DefaultBranch
 }
