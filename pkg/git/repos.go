@@ -1,11 +1,11 @@
-package gituser
+package git
 
 import (
 	"fmt"
 	"time"
 )
 
-type UserRepos struct {
+type Repos struct {
 	Descript        *string   `json:"description"`
 	License         *License  `json:"license"`
 	Language        *string   `json:"language"`
@@ -65,18 +65,18 @@ type Owner struct {
 	SiteAdmin  bool   `json:"site_admin"`
 }
 
-func (u UserRepos) Command() string { return "git clone " + u.CloneURL }
-func (u UserRepos) IsPrivate() bool { return u.Private }
-func (u UserRepos) Title() string   { return u.Name }
-func (u UserRepos) Description() string {
+func (u Repos) Command() string { return "git clone " + u.CloneURL }
+func (u Repos) IsPrivate() bool { return u.Private }
+func (u Repos) Title() string   { return u.Name }
+func (u Repos) Description() string {
 	if u.Descript == nil {
 		return "No Description"
 	}
 	return *u.Descript
 }
-func (u UserRepos) FilterValue() string { return u.Name }
+func (u Repos) FilterValue() string { return u.Name }
 
-func (u UserRepos) String() string {
+func (u Repos) String() string {
 	dis := ""
 	if u.Descript != nil {
 		dis = *u.Descript

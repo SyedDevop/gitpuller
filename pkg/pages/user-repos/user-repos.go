@@ -21,7 +21,7 @@ type state int
 type GoBackMsg struct{}
 
 // RepoSelectedMsg is a message that is sent when a repo is selected.
-type RepoSelectedMsg = gituser.UserRepos
+type RepoSelectedMsg = git.Repos
 
 const (
 	loadingState state = iota
@@ -112,7 +112,7 @@ func (r *UserReposPage) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	r.common.Logger.Debugf("list Msg from :%T", msg)
 	cmds := make([]tea.Cmd, 0)
 	switch msg := msg.(type) {
-	case []gituser.UserRepos:
+	case []git.Repos:
 		r.common.Logger.Debugf("Got Msg from :%T\n and the len: %d is ", msg, len(msg))
 		if len(msg) > 0 {
 			r.git.SetUserUrl(msg[0].Owner.HTMLURL)
@@ -184,7 +184,7 @@ func (r *UserReposPage) View() string {
 
 func (r *UserReposPage) Reset() tea.Cmd { return nil }
 func (r *UserReposPage) SelectRepoCmd() tea.Msg {
-	curItem := r.list.SelectedItem().(gituser.UserRepos)
+	curItem := r.list.SelectedItem().(git.Repos)
 	url := fmt.Sprintf("%s/main", curItem.TreesURL)
 	r.common.SetRepoUrl(url)
 	return RepoSelectedMsg(curItem)

@@ -5,7 +5,7 @@ import (
 	"io"
 	"strings"
 
-	gituser "github.com/SyedDevop/gitpuller/pkg/git/git-user"
+	"github.com/SyedDevop/gitpuller/pkg/git"
 	"github.com/SyedDevop/gitpuller/pkg/ui/common"
 	"github.com/charmbracelet/bubbles/key"
 	"github.com/charmbracelet/bubbles/list"
@@ -46,7 +46,7 @@ func (d *ItemDelegate) Spacing() int { return 1 }
 // Update implements list.ItemDelegate.
 func (d *ItemDelegate) Update(msg tea.Msg, m *list.Model) tea.Cmd {
 	idx := m.Index()
-	item, ok := m.SelectedItem().(gituser.UserRepos)
+	item, ok := m.SelectedItem().(git.Repos)
 	if !ok {
 		return nil
 	}
@@ -75,7 +75,7 @@ func TruncateString(s string, max int) string {
 
 // Render implements list.ItemDelegate.
 func (d *ItemDelegate) Render(w io.Writer, m list.Model, index int, listItem list.Item) {
-	i := listItem.(gituser.UserRepos)
+	i := listItem.(git.Repos)
 	s := strings.Builder{}
 	var matchedRunes []int
 

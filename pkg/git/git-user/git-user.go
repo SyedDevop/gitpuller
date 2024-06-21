@@ -81,18 +81,18 @@ func (g *Git) Description() string {
 	return "This is the Repositories of " + g.UserUrl + ""
 }
 
-func (g *Git) GetUsersRepos(url string) ([]UserRepos, error) {
+func (g *Git) GetUsersRepos(url string) ([]git.Repos, error) {
 	res, err := g.Client.Get(url)
 	if err != nil {
 		return nil, err
 	}
 	defer res.Body.Close()
-	var userRepos []UserRepos
-	err = client.UnmarshalJSON(res, &userRepos)
+	var Repos []git.Repos
+	err = client.UnmarshalJSON(res, &Repos)
 	if err != nil {
 		return nil, err
 	}
-	return userRepos, nil
+	return Repos, nil
 }
 
 func (r *Repos) SetNextLink(url string) {
@@ -158,8 +158,8 @@ First Link: %s,
 Last Link: %s`, n, p, f, l)
 }
 
-func (r *Repos) Next() ([]UserRepos, error) {
-	assert.Assert(r.NextLink != nil, "The next url link for UserRepos is nil")
+func (r *Repos) Next() ([]git.Repos, error) {
+	assert.Assert(r.NextLink != nil, "The next url link for Repos is nil")
 	if r.ItraterDone {
 		return nil, nil
 	}
@@ -197,10 +197,10 @@ func (r *Repos) Next() ([]UserRepos, error) {
 		}
 	}
 
-	var userRepos []UserRepos
-	err = client.UnmarshalJSON(res, &userRepos)
+	var Repos []git.Repos
+	err = client.UnmarshalJSON(res, &Repos)
 	if err != nil {
 		return nil, err
 	}
-	return userRepos, nil
+	return Repos, nil
 }

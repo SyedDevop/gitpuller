@@ -44,7 +44,7 @@ type RepoPage struct {
 	err          error
 	git          *gituser.Git
 	tabs         *tabs.Tabs
-	SelectedRepo *gituser.UserRepos
+	SelectedRepo *git.Repos
 	statusbar    *statusbar.Model
 	repoUrl      string
 	ref          string
@@ -321,7 +321,7 @@ func (r *RepoPage) SetRepoUrl(url string) {
 	r.common.SetRepoUrl(url)
 }
 
-func (r *RepoPage) SetRepo(repo *gituser.UserRepos) {
+func (r *RepoPage) SetRepo(repo *git.Repos) {
 	r.SelectedRepo = repo
 	r.ref = repo.DefaultBranch
 }
