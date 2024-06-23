@@ -1,9 +1,9 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"io"
-	"math"
 	"os"
 	"path/filepath"
 	"sync"
@@ -14,33 +14,25 @@ import (
 	"github.com/charmbracelet/log"
 )
 
-// func getCurDir() (string, bool) {
-// 	_, filename, _, ok := runtime.Caller(0)
-// 	return filepath.Dir(filename), ok
-// }
-
-func getGitFile(c *client.Client, repos []git.Repos) []error {
+func getGitFile(c *client.Client, repos []git.Repos) ([]git.Tree, []error) {
 	errList := make([]error, 0)
 	dataLen := len(repos)
 	repoPath := filepath.Join(basePath, "repo")
+	treeData := make([]git.Tree, dataLen)
 
 	if err := util.CreateDir(repoPath); err != nil {
 		errList = append(errList, err)
-		return errList
+		return nil, errList
 	}
 
-	ws := sync.WaitGroup{}
-	ws.Add(dataLen)
-	errChan := make(chan error)
-	TreeData := make(chan git.Tree)
+	var ws sync.WaitGroup
+	errChan := make(chan error, dataLen)
+	treeDataChan := make(chan git.Tree, dataLen)
 
 	log.Info("Fetch#Repo from GitHub")
-	go func() {
-		per := math.Floor((float64(len(TreeData)) / float64(dataLen)) * 100)
-		log.Infof("\rOn Downloading repos .... |%0.f| %d/%d", per, len(TreeData), dataLen)
-	}()
-	for _, data := range repos {
-		go func() {
+	for i, data := range repos {
+		ws.Add(1)
+		go func(i int, data git.Repos) {
 			defer ws.Done()
 			path := filepath.Join(repoPath, fmt.Sprintf("%s.json", data.Name))
 			file, err := os.Create(path)
@@ -49,27 +41,48 @@ func getGitFile(c *client.Client, repos []git.Repos) []error {
 				return
 			}
 			defer file.Close()
-			res, err := c.Get(data.TreesURL[:len(data.TagsURL)-6])
+
+			url := data.TreesURL[:len(data.TreesURL)-6] + "/main?recursive=1"
+			res, err := c.Get(url)
 			if err != nil {
 				errChan <- err
 				return
 			}
 			defer res.Body.Close()
-			_, err = io.Copy(file, res.Body)
+			body, err := io.ReadAll(res.Body)
+			if err != nil {
+				errChan <- err
+				return
+			}
+			_, err = file.Write(body)
 			if err != nil {
 				errChan <- err
 				return
 			}
 			var tdata git.Tree
-			client.UnmarshalJSON(res, &tdata)
-			TreeData <- tdata
-		}()
+			err = json.Unmarshal(body, &tdata)
+			if err != nil {
+				errChan <- err
+				return
+			}
+			treeDataChan <- tdata
+		}(i, data)
 	}
-	ws.Wait()
-	close(errChan)
+
+	go func() {
+		ws.Wait()
+		close(errChan)
+		close(treeDataChan)
+	}()
+
+	for tdata := range treeDataChan {
+		treeData = append(treeData, tdata)
+	}
+
 	for errs := range errChan {
 		errList = append(errList, errs)
 	}
+
 	log.Info("Done#Repo from GitHub")
-	return errList
+	return treeData, errList
 }

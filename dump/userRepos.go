@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"io"
 	"os"
@@ -25,6 +26,10 @@ func userRepos(c *client.Client) ([]git.Repos, error) {
 	fileName := fmt.Sprintf("%s.json", *user)
 	fileLocation := filepath.Join(basePath, fileName)
 
+	if err := util.CreateDir(basePath); err != nil {
+		return nil, err
+	}
+
 	res, err := c.Get(reposUrl(*user))
 	if err != nil {
 		return nil, err
@@ -36,13 +41,20 @@ func userRepos(c *client.Client) ([]git.Repos, error) {
 		return nil, err
 	}
 	defer file.Close()
-	_, err = io.Copy(file, res.Body)
+
+	body, err := io.ReadAll(res.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	_, err = file.Write(body)
 	if err != nil {
 		return nil, err
 	}
 
 	var repos []git.Repos
-	if err := client.UnmarshalJSON(res, &repos); err != nil {
+	err = json.Unmarshal(body, &repos)
+	if err != nil {
 		return nil, err
 	}
 	return repos, nil

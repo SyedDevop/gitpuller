@@ -2,8 +2,10 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"os"
 	"path/filepath"
+	"time"
 
 	"github.com/SyedDevop/gitpuller/cmd/util"
 	"github.com/SyedDevop/gitpuller/pkg/client"
@@ -26,54 +28,31 @@ func getGitClient() *client.Client {
 	return c
 }
 
-// fmt.Printf("\rOn %d/10", i)
-func run(path, user string) error {
-	// fileJson := fmt.Sprintf("%s.json", fileName)
-	// fName := filepath.Join(path, fileJson)
-	// if getData == "repo" {
-	// 	start := time.Now()
-	// 	log.Info("Start Downloading repo tree from", "file", fName)
-	//
-	// 	if errs := getGitFile(fName, fileName); len(errs) != 0 {
-	// 		for _, err := range errs {
-	// 			log.Error("run#getGitFile", err)
-	// 		}
-	// 		os.Exit(1)
-	// 	}
-	//
-	// 	log.Print("Done Downloading repo tree from", "file", fName, "duration", time.Since(start))
-	// 	os.Exit(0)
-	// }
-	//
-	// c := getGitClient()
-	// per := 100
-	// pages := 1
-	//
-	// start := time.Now()
-	// log.Info("Start downloading file", "path", path, "fileName", fileName)
-	//
-	// res, err := c.Get(git.AddPaginationParams(git.AuthReposURL(), &per, &pages))
-	// if err != nil {
-	// 	return err
-	// }
-	// defer res.Body.Close()
-	//
-	// log.Info("Creating the file", "path", path, "fileName", fileName)
-	// // fileJson := fmt.Sprintf("%s.json", fileName)
-	// // fName := filepath.Join(path, fileJson)
-	// file, err := os.Create(fName)
-	// if err != nil {
-	// 	return err
-	// }
-	// defer file.Close()
-	//
-	// log.Print("Done downloading file", "path", path, "fileName", fileJson, "duration", time.Since(start))
-	// _, err = io.Copy(file, res.Body)
-	// if err != nil {
-	// 	return err
-	// }
-	//
-	return nil
+func run(_, user string) {
+	c := getGitClient()
+
+	start := time.Now()
+	log.Info("Start downloading Repos")
+	repos, err := userRepos(c)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	fileName := fmt.Sprintf("%s.json", user)
+	fileLocation := filepath.Join(basePath, fileName)
+	log.Info("Done downloading Repos", "Path", fileLocation, "duration", time.Since(start))
+
+	start = time.Now()
+	log.Info("Start Downloading repo tree")
+	_, errs := getGitFile(c, repos)
+	if len(errs) != 0 {
+		for _, err := range errs {
+			log.Error("run#getGitFile", err)
+		}
+		os.Exit(1)
+	}
+	repoPath := filepath.Join(basePath, "repo")
+	log.Info("Done downloading Repo Tree", "Path", repoPath, "duration", time.Since(start))
 }
 
 var (
@@ -97,7 +76,5 @@ func init() {
 }
 
 func main() {
-	if err := run(*path, *user); err != nil {
-		log.Fatal("Error from Dump main", "err", err)
-	}
+	run(*path, *user)
 }
