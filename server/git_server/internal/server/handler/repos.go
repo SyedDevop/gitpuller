@@ -28,7 +28,7 @@ func (re *Repos) PagenatedUserRepos(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var data ReposDataType
-	err := file.ReadJson(user, &data)
+	err := file.ReadJson((user + "/" + user), &data)
 	if err != nil {
 		log.Error("ReposHandlear", "err", err)
 		render.Render(w, r, reserr.ErrRender(err))
@@ -41,7 +41,7 @@ func (re *Repos) PagenatedUserRepos(w http.ResponseWriter, r *http.Request) {
 // paginateAndRender handles the pagination of the data and renders the appropriate JSON response.
 func (re *Repos) PagenatedRepos(w http.ResponseWriter, r *http.Request) {
 	var data ReposDataType
-	err := file.ReadJson("SyedDevop", &data)
+	err := file.ReadJson("SyedDevop"+"/SyedDevop", &data)
 	if err != nil {
 		log.Error("ReposHandlear", "err", err)
 		render.Render(w, r, reserr.ErrRender(err))

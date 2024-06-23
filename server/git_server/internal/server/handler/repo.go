@@ -41,7 +41,7 @@ func (re *Repo) RepoTree(w http.ResponseWriter, r *http.Request) {
 	sha := chi.URLParam(r, "sha")
 	recursive := r.URL.Query().Get("recursive")
 
-	repoPath := filepath.Join(owner, repo)
+	repoPath := filepath.Join(owner, "repo", repo)
 	repoJsonPath := fmt.Sprintf("%s.json", repoPath)
 	fullPath, _ := file.GetCurDir()
 	fullFilePath := filepath.Join(fullPath, repoJsonPath)
